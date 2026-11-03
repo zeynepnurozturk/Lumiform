@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Lumiform</string>
+    <string name="greeting_name_label">Name</string>
+    <string name="greeting_submit">Greet</string>
+    <string name="greeting_cancel">Cancel</string>
+    <string name="greeting_retry">Retry</string>
+    <string name="greeting_dismiss">Dismiss</string>
+</resources>
