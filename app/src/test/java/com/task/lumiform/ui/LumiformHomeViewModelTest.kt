@@ -1,10 +1,14 @@
 package com.task.lumiform.ui
 
+import com.task.lumiform.domain.model.ChoiceQuestionDomainModel
 import com.task.lumiform.domain.model.PageDomainModel
+import com.task.lumiform.domain.model.ResponseOptionDomainModel
+import com.task.lumiform.domain.model.ResponseSetDomainModel
 import com.task.lumiform.domain.repository.LumiformTestRepository
 import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
+import com.task.lumiform.ui.model.LumiformHomeItemUiModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,7 +46,7 @@ class LumiformHomeViewModelTest {
     }
 
     @Test
-    fun `success exposes pages and Success state`() = runTest {
+    fun `success exposes flattened items and Success state`() = runTest {
         val repository = FakeRepository()
         val viewModel = LumiformHomeViewModel(LumiformTestUseCase(repository))
         val pages = listOf(PageDomainModel(id = 1, title = "Main Page"))
@@ -50,7 +54,34 @@ class LumiformHomeViewModelTest {
         repository.result.complete(UseCaseResult.Success(LumiformTestUseCase.Result(pages)))
 
         assertEquals(LumiformHomeUiState.Success, viewModel.uiState.value)
-        assertEquals(pages, viewModel.lumiformTestResult.value)
+        assertEquals(
+            listOf(LumiformHomeItemUiModel.PageTitle(id = 1, title = "Main Page")),
+            viewModel.lumiformTestResult.value
+        )
+    }
+
+    @Test
+    fun `single selection keeps only the last tapped response`() = runTest {
+        val viewModel = loadedViewModel(multipleSelection = false)
+        val question = viewModel.choiceQuestion()
+
+        viewModel.callbacks.onResponseClick(question, 1)
+        viewModel.callbacks.onResponseClick(question, 2)
+        viewModel.callbacks.onResponseClick(question, 2)
+
+        assertEquals(mapOf(QUESTION_ID to setOf(2)), viewModel.selectedResponses.value)
+    }
+
+    @Test
+    fun `multiple selection toggles each response`() = runTest {
+        val viewModel = loadedViewModel(multipleSelection = true)
+        val question = viewModel.choiceQuestion()
+
+        viewModel.callbacks.onResponseClick(question, 1)
+        viewModel.callbacks.onResponseClick(question, 2)
+        viewModel.callbacks.onResponseClick(question, 1)
+
+        assertEquals(mapOf(QUESTION_ID to setOf(2)), viewModel.selectedResponses.value)
     }
 
     @Test
@@ -62,6 +93,33 @@ class LumiformHomeViewModelTest {
 
         assertEquals(LumiformHomeUiState.Error("boom"), viewModel.uiState.value)
         assertNull(viewModel.lumiformTestResult.value)
+    }
+
+    private fun loadedViewModel(multipleSelection: Boolean): LumiformHomeViewModel {
+        val repository = FakeRepository()
+        val viewModel = LumiformHomeViewModel(LumiformTestUseCase(repository))
+        val choice = ChoiceQuestionDomainModel(
+            id = QUESTION_ID,
+            content = "Question",
+            responseSet = ResponseSetDomainModel(
+                id = 100,
+                multipleSelection = multipleSelection,
+                responses = listOf(
+                    ResponseOptionDomainModel(id = 1, label = "A"),
+                    ResponseOptionDomainModel(id = 2, label = "B")
+                )
+            )
+        )
+        val pages = listOf(PageDomainModel(id = 1, title = "Page", items = listOf(choice)))
+        repository.result.complete(UseCaseResult.Success(LumiformTestUseCase.Result(pages)))
+        return viewModel
+    }
+
+    private fun LumiformHomeViewModel.choiceQuestion() =
+        lumiformTestResult.value!!.filterIsInstance<LumiformHomeItemUiModel.Choice>().single()
+
+    private companion object {
+        const val QUESTION_ID = 10
     }
 
     private class FakeRepository : LumiformTestRepository {
