@@ -15,4 +15,11 @@ interface ServiceModule {
     fun bindsLumiformTestService(
         lumiformTestService: LumiformTestServiceImpl
     ): LumiformTestService
+
+    // To use the bundled mock JSON instead of the gist, comment out the binding above
+    // and uncomment this one (and its MockLumiformTestService import).
+    // @Binds
+    // fun bindsLumiformTestService(
+    //     lumiformTestService: MockLumiformTestService
+    // ): LumiformTestService
 }
