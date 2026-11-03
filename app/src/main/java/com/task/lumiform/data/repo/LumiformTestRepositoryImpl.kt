@@ -14,6 +14,10 @@ class LumiformTestRepositoryImpl @Inject internal constructor(
     private val service: LumiformTestService
 ) : LumiformTestRepository {
 
+    // TODO: Offline support with Room, using normalized tables: pages, items (sections and questions with
+    //  parent_id, page_id, position, type) and response_options, rebuilt into the page tree on read.
+    // TODO: Network first, cache fallback: on success replace the cache and return it; on failure return
+    //  the cached data, and return an error only if the cache is empty.
     override suspend fun getTestCase(): UseCaseResult<LumiformTestUseCase.Result> =
         withContext(Dispatchers.IO) {
             service.getTestCase().toUseCaseResult { items ->

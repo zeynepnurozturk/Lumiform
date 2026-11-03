@@ -9,6 +9,7 @@ import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel
+import com.task.lumiform.ui.model.LumiformHomePageUiModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,7 +47,7 @@ class LumiformHomeViewModelTest {
     }
 
     @Test
-    fun `success exposes flattened items and Success state`() = runTest {
+    fun `success exposes pages and Success state`() = runTest {
         val repository = FakeRepository()
         val viewModel = LumiformHomeViewModel(LumiformTestUseCase(repository))
         val pages = listOf(PageDomainModel(id = 1, title = "Main Page"))
@@ -55,7 +56,7 @@ class LumiformHomeViewModelTest {
 
         assertEquals(LumiformHomeUiState.Success, viewModel.uiState.value)
         assertEquals(
-            listOf(LumiformHomeItemUiModel.PageTitle(id = 1, title = "Main Page")),
+            listOf(LumiformHomePageUiModel(id = 1, title = "Main Page", items = emptyList())),
             viewModel.lumiformTestResult.value
         )
     }
@@ -69,7 +70,7 @@ class LumiformHomeViewModelTest {
         viewModel.callbacks.onResponseClick(question, 2)
         viewModel.callbacks.onResponseClick(question, 2)
 
-        assertEquals(mapOf(QUESTION_ID to setOf(2)), viewModel.selectedResponses.value)
+        assertEquals(mapOf(QUESTION_ID to listOf(2)), viewModel.selectedResponses.value)
     }
 
     @Test
@@ -81,7 +82,18 @@ class LumiformHomeViewModelTest {
         viewModel.callbacks.onResponseClick(question, 2)
         viewModel.callbacks.onResponseClick(question, 1)
 
-        assertEquals(mapOf(QUESTION_ID to setOf(2)), viewModel.selectedResponses.value)
+        assertEquals(mapOf(QUESTION_ID to listOf(2)), viewModel.selectedResponses.value)
+    }
+
+    @Test
+    fun `multiple selection keeps tap order`() = runTest {
+        val viewModel = loadedViewModel(multipleSelection = true)
+        val question = viewModel.choiceQuestion()
+
+        viewModel.callbacks.onResponseClick(question, 2)
+        viewModel.callbacks.onResponseClick(question, 1)
+
+        assertEquals(mapOf(QUESTION_ID to listOf(2, 1)), viewModel.selectedResponses.value)
     }
 
     @Test
@@ -116,7 +128,7 @@ class LumiformHomeViewModelTest {
     }
 
     private fun LumiformHomeViewModel.choiceQuestion() =
-        lumiformTestResult.value!!.filterIsInstance<LumiformHomeItemUiModel.Choice>().single()
+        lumiformTestResult.value!!.single().items.filterIsInstance<LumiformHomeItemUiModel.Choice>().single()
 
     private companion object {
         const val QUESTION_ID = 10
