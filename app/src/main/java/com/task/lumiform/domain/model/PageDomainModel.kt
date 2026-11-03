@@ -47,5 +47,6 @@ data class ResponseSetDomainModel(
 data class ResponseOptionDomainModel(
     val id: Int,
     val label: String = "",
-    val score: Int? = null
+    val score: Int? = null,
+    val selected: Boolean = false
 )

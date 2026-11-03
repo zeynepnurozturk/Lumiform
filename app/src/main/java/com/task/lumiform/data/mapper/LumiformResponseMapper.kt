@@ -54,5 +54,6 @@ fun ResponseSetDto.toDomainModel() = ResponseSetDomainModel(
 fun ResponseOptionDto.toDomainModel() = ResponseOptionDomainModel(
     id = id,
     label = label,
-    score = score
+    score = score,
+    selected = selected
 )

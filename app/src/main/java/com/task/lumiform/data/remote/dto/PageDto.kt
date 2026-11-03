@@ -63,5 +63,7 @@ data class ResponseSetDto(
 data class ResponseOptionDto(
     val id: Int,
     val label: String,
-    val score: Int? = null
+    val score: Int? = null,
+    // Not sent by the API. Set locally and stored with the cached page.
+    val selected: Boolean = false
 )
