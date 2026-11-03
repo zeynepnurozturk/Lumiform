@@ -11,5 +11,12 @@ open class LumiformTestUseCase @Inject constructor(
         return repository.getTestCase()
     }
 
+    open suspend fun getAnswers(): Map<Int, List<Int>> = repository.getAnswers()
+
+    open suspend fun saveAnswer(pageId: Int, questionId: Int, selectedResponseIds: List<Int>) =
+        repository.saveAnswer(pageId, questionId, selectedResponseIds)
+
+    open fun queuePageForSync(pageId: Int) = repository.queuePageForSync(pageId)
+
     data class Result(val model: List<PageDomainModel>)
 }
