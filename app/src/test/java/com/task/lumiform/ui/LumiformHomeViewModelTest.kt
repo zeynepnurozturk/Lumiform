@@ -1,6 +1,6 @@
 package com.task.lumiform.ui
 
-import com.task.lumiform.domain.model.LumiformItemDomainModel
+import com.task.lumiform.domain.model.PageDomainModel
 import com.task.lumiform.domain.repository.LumiformTestRepository
 import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseError
@@ -45,7 +45,7 @@ class LumiformHomeViewModelTest {
     fun `success exposes pages and Success state`() = runTest {
         val repository = FakeRepository()
         val viewModel = LumiformHomeViewModel(LumiformTestUseCase(repository))
-        val pages = listOf(LumiformItemDomainModel.Page(id = 1, title = "Main Page"))
+        val pages = listOf(PageDomainModel(id = 1, title = "Main Page"))
 
         repository.result.complete(UseCaseResult.Success(LumiformTestUseCase.Result(pages)))
 

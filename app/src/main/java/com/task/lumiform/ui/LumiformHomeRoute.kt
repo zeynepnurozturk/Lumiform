@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.task.lumiform.domain.model.LumiformItemDomainModel
+import com.task.lumiform.domain.model.PageDomainModel
 
 @Composable
 fun LumiformHomeRoute(
@@ -27,7 +27,7 @@ fun LumiformHomeRoute(
 @Composable
 fun LumiformHomeScreen(
     uiState: LumiformHomeUiState,
-    lumiformTestResult: List<LumiformItemDomainModel>?,
+    lumiformTestResult: List<PageDomainModel>?,
     callbacks: LumiformHomeCallbacks,
     modifier: Modifier = Modifier,
 ) {

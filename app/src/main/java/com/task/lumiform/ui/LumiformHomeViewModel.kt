@@ -2,7 +2,7 @@ package com.task.lumiform.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.task.lumiform.domain.model.LumiformItemDomainModel
+import com.task.lumiform.domain.model.PageDomainModel
 import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,7 +26,7 @@ class LumiformHomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<LumiformHomeUiState>(LumiformHomeUiState.Loading)
     val uiState: StateFlow<LumiformHomeUiState> = _uiState.asStateFlow()
 
-    private val _lumiformTestResult: MutableStateFlow<List<LumiformItemDomainModel>?> = MutableStateFlow(null)
+    private val _lumiformTestResult: MutableStateFlow<List<PageDomainModel>?> = MutableStateFlow(null)
     val lumiformTestResult = _lumiformTestResult.asStateFlow()
 
     val callbacks by lazy {

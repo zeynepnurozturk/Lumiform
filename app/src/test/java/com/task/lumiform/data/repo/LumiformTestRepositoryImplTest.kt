@@ -1,11 +1,14 @@
 package com.task.lumiform.data.repo
 
 import com.task.lumiform.data.remote.NetworkResult
-import com.task.lumiform.data.remote.dto.LumiformItemDto
+import com.task.lumiform.data.remote.dto.ChoiceQuestionDto
+import com.task.lumiform.data.remote.dto.PageDto
 import com.task.lumiform.data.remote.dto.ResponseOptionDto
 import com.task.lumiform.data.remote.dto.ResponseSetDto
+import com.task.lumiform.data.remote.dto.SectionDto
 import com.task.lumiform.data.remote.service.LumiformTestService
-import com.task.lumiform.domain.model.LumiformItemDomainModel
+import com.task.lumiform.domain.model.ChoiceQuestionDomainModel
+import com.task.lumiform.domain.model.SectionDomainModel
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
 import kotlinx.coroutines.test.runTest
@@ -17,17 +20,23 @@ class LumiformTestRepositoryImplTest {
 
     @Test
     fun `success maps dto tree to domain model`() = runTest {
-        val dto = LumiformItemDto.Page(
+        val dto = PageDto(
             id = 1,
             title = null,
             items = listOf(
-                LumiformItemDto.Choice(
+                SectionDto(
                     id = 2,
-                    content = "Question",
-                    responseSet = ResponseSetDto(
-                        id = 3,
-                        multipleSelection = true,
-                        responses = listOf(ResponseOptionDto(id = 4, label = "A", score = null))
+                    title = "Section",
+                    items = listOf(
+                        ChoiceQuestionDto(
+                            id = 3,
+                            content = "Question",
+                            responseSet = ResponseSetDto(
+                                id = 4,
+                                multipleSelection = true,
+                                responses = listOf(ResponseOptionDto(id = 5, label = "A", score = null))
+                            )
+                        )
                     )
                 )
             )
@@ -36,10 +45,12 @@ class LumiformTestRepositoryImplTest {
 
         val result = repository.getTestCase()
 
-        val page = (result as UseCaseResult.Success).result.model.single() as LumiformItemDomainModel.Page
+        val page = (result as UseCaseResult.Success).result.model.single()
         assertEquals("", page.title)
-        val choice = page.items.single() as LumiformItemDomainModel.Choice
-        assertTrue(choice.responseSet!!.multipleSelection)
+        val section = page.items.single() as SectionDomainModel
+        assertEquals("Section", section.title)
+        val choice = section.items.single() as ChoiceQuestionDomainModel
+        assertTrue(choice.responseSet.multipleSelection)
         assertEquals("A", choice.responseSet.responses.single().label)
     }
 
@@ -53,7 +64,7 @@ class LumiformTestRepositoryImplTest {
     }
 
     private class FakeService(
-        private val result: NetworkResult<List<LumiformItemDto>>
+        private val result: NetworkResult<List<PageDto>>
     ) : LumiformTestService {
         override suspend fun getTestCase() = result
     }

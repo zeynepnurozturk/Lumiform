@@ -1,8 +1,8 @@
 package com.task.lumiform.data.remote.service
 
 import com.task.lumiform.data.remote.NetworkResult
-import com.task.lumiform.data.remote.dto.LumiformItemDto
+import com.task.lumiform.data.remote.dto.PageDto
 
 interface LumiformTestService {
-    suspend fun getTestCase(): NetworkResult<List<LumiformItemDto>>
+    suspend fun getTestCase(): NetworkResult<List<PageDto>>
 }

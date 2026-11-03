@@ -1,6 +1,6 @@
 package com.task.lumiform.domain.usecase
 
-import com.task.lumiform.domain.model.LumiformItemDomainModel
+import com.task.lumiform.domain.model.PageDomainModel
 import com.task.lumiform.domain.repository.LumiformTestRepository
 import javax.inject.Inject
 
@@ -11,5 +11,5 @@ open class LumiformTestUseCase @Inject constructor(
         return repository.getTestCase()
     }
 
-    data class Result(val model: List<LumiformItemDomainModel>)
+    data class Result(val model: List<PageDomainModel>)
 }
