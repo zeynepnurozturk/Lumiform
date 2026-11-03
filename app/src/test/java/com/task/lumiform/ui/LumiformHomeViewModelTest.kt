@@ -100,14 +100,24 @@ class LumiformHomeViewModelTest {
     }
 
     @Test
-    fun `error exposes Error state with message`() = runTest {
+    fun `network error exposes Network error state`() = runTest {
         val repository = FakeRepository()
         val viewModel = newViewModel(repository)
 
         repository.result.complete(UseCaseResult.Error(UseCaseError.NetworkError("boom")))
 
-        assertEquals(LumiformHomeUiState.Error("boom"), viewModel.uiState.value)
+        assertEquals(LumiformHomeUiState.Error(LoadErrorType.Network), viewModel.uiState.value)
         assertNull(viewModel.lumiformTestResult.value)
+    }
+
+    @Test
+    fun `any other error exposes Server error state`() = runTest {
+        val repository = FakeRepository()
+        val viewModel = newViewModel(repository)
+
+        repository.result.complete(UseCaseResult.Error(UseCaseError.ApiError(code = 500, message = "Server error")))
+
+        assertEquals(LumiformHomeUiState.Error(LoadErrorType.Server), viewModel.uiState.value)
     }
 
     @Test

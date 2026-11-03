@@ -11,9 +11,11 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
@@ -43,10 +45,20 @@ abstract class NetworkModule {
             explicitNulls = false
         }
 
+        // Limits for a single attempt. LumiformTestServiceImpl retries a failed attempt.
         @Singleton
         @Provides
-        fun provideLumiformApi(json: Json): LumiformApi = Retrofit.Builder()
+        fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
+
+        @Singleton
+        @Provides
+        fun provideLumiformApi(json: Json, okHttpClient: OkHttpClient): LumiformApi = Retrofit.Builder()
             .baseUrl(LumiformApi.BASE_URL)
+            .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(LumiformApi::class.java)
@@ -57,5 +69,9 @@ abstract class NetworkModule {
             @ApplicationContext context: Context,
             json: Json
         ): MockNetworkResponseProvider = MockNetworkResponseProvider(context = context, json = json)
+
+        private const val CONNECT_TIMEOUT_SECONDS = 10L
+        private const val READ_TIMEOUT_SECONDS = 10L
+        private const val CALL_TIMEOUT_SECONDS = 15L
     }
 }

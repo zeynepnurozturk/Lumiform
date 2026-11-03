@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.task.lumiform.domain.usecase.LumiformTestUseCase
+import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
 import com.task.lumiform.ui.mapper.toHomePages
 import com.task.lumiform.ui.navigation.LumiformDestination
@@ -25,8 +26,10 @@ sealed interface LumiformHomeUiState {
     data object Loading : LumiformHomeUiState
     data object Success : LumiformHomeUiState
     data object Empty : LumiformHomeUiState
-    data class Error(val message: String) : LumiformHomeUiState
+    data class Error(val type: LoadErrorType) : LumiformHomeUiState
 }
+
+enum class LoadErrorType { Network, Server }
 
 @HiltViewModel
 class LumiformHomeViewModel @Inject constructor(
@@ -79,11 +82,14 @@ class LumiformHomeViewModel @Inject constructor(
                     _uiState.value =
                         if (pages.isEmpty()) LumiformHomeUiState.Empty else LumiformHomeUiState.Success
                 }
-                is UseCaseResult.Error -> _uiState.value = LumiformHomeUiState.Error(result.message)
-                is UseCaseResult.Warning -> _uiState.value = LumiformHomeUiState.Error(result.message)
+                is UseCaseResult.Error -> _uiState.value = LumiformHomeUiState.Error(result.error.toLoadErrorType())
+                is UseCaseResult.Warning -> _uiState.value = LumiformHomeUiState.Error(LoadErrorType.Server)
             }
         }
     }
+
+    private fun UseCaseError.toLoadErrorType() =
+        if (this is UseCaseError.NetworkError) LoadErrorType.Network else LoadErrorType.Server
 
     private fun onResponseClick(question: LumiformHomeItemUiModel.Choice, responseId: Int) {
         val pageId = currentPage()?.id ?: return

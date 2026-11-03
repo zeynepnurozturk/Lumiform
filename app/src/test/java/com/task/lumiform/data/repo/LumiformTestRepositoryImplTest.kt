@@ -3,6 +3,7 @@ package com.task.lumiform.data.repo
 import com.task.lumiform.data.local.ItemEntity
 import com.task.lumiform.data.local.ResponseEntity
 import com.task.lumiform.data.local.TestCaseDao
+import com.task.lumiform.data.mapper.NETWORK_ERROR_MESSAGE
 import com.task.lumiform.data.remote.NetworkResult
 import com.task.lumiform.data.remote.dto.AnswerSubmissionDto
 import com.task.lumiform.data.remote.dto.SubmissionChoiceQuestionDto
@@ -17,6 +18,7 @@ import com.task.lumiform.domain.model.ChoiceQuestionDomainModel
 import com.task.lumiform.domain.model.SectionDomainModel
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
+import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -63,12 +65,12 @@ class LumiformTestRepositoryImplTest {
     }
 
     @Test
-    fun `network error maps to use case error`() = runTest {
-        val repository = newRepository(FakeService(NetworkResult.NetworkError(Exception("boom"))))
+    fun `network failure maps to a network error without the raw exception message`() = runTest {
+        val repository = newRepository(FakeService(NetworkResult.NetworkError(IOException("Unable to resolve host"))))
 
         val result = repository.getTestCase()
 
-        assertEquals(UseCaseError.NetworkError("boom"), (result as UseCaseResult.Error).error)
+        assertEquals(UseCaseError.NetworkError(NETWORK_ERROR_MESSAGE), (result as UseCaseResult.Error).error)
     }
 
     @Test
@@ -183,11 +185,11 @@ class LumiformTestRepositoryImplTest {
 
     @Test
     fun `failed request with an empty cache returns the error`() = runTest {
-        val repository = newRepository(FakeService(NetworkResult.NetworkError(Exception("boom"))))
+        val repository = newRepository(FakeService(NetworkResult.NetworkError(IOException("boom"))))
 
         val result = repository.getTestCase()
 
-        assertEquals(UseCaseError.NetworkError("boom"), (result as UseCaseResult.Error).error)
+        assertTrue((result as UseCaseResult.Error).error is UseCaseError.NetworkError)
     }
 
     // Page 1: choice question 3 inside section 2, and choice question 4 directly on the page.

@@ -42,7 +42,6 @@ class LumiformTestRepositoryImpl @Inject internal constructor(
             if (!refreshed && cached.isEmpty()) {
                 return@withContext response.toUseCaseResult { LumiformTestUseCase.Result(emptyList()) }
             }
-            if (!refreshed) println("[PageDb] no fresh pages, showing ${cached.size} cached pages")
             UseCaseResult.Success(LumiformTestUseCase.Result(cached))
         }
 

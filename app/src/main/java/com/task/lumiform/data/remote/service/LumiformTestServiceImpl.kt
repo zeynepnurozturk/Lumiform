@@ -4,8 +4,10 @@ import com.task.lumiform.data.remote.NetworkResult
 import com.task.lumiform.data.remote.dto.AnswerSubmissionDto
 import com.task.lumiform.data.remote.dto.PageDto
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 class LumiformTestServiceImpl @Inject constructor(
@@ -19,7 +21,7 @@ class LumiformTestServiceImpl @Inject constructor(
             /* delay(MOCK_NETWORK_DELAY_MS)
             val response = mockNetworkResponseProvider.getApiResponse<List<PageDto>>(ResponseType.LUMIFORM_TEST_CASE)
             NetworkResult.Success(data = response, code = 200)*/
-            NetworkResult.Success(data = api.getTestCase(), code = 200)
+            NetworkResult.Success(data = withRetry { api.getTestCase() }, code = 200)
         } catch (e: CancellationException) {
             throw e
         } catch (e: HttpException) {
@@ -27,6 +29,24 @@ class LumiformTestServiceImpl @Inject constructor(
         } catch (e: Exception) {
             NetworkResult.NetworkError(e)
         }
+    }
+
+    /**
+     * Runs [request] up to [MAX_ATTEMPTS] times. Only a lost connection, a timeout or a 5xx response is retried,
+     * since anything else would fail the same way again. The wait before each retry grows by [RETRY_DELAY_MS].
+     */
+    private suspend fun <T> withRetry(request: suspend () -> T): T {
+        repeat(MAX_ATTEMPTS - 1) { attempt ->
+            try {
+                return request()
+            } catch (e: IOException) {
+                // Retried below.
+            } catch (e: HttpException) {
+                if (e.code() < HTTP_SERVER_ERROR) throw e
+            }
+            delay(RETRY_DELAY_MS * (attempt + 1))
+        }
+        return request()
     }
 
     /**
@@ -40,5 +60,8 @@ class LumiformTestServiceImpl @Inject constructor(
     private companion object {
         const val SUBMIT_ANSWERS_PATH = "/answers"
         const val MOCK_NETWORK_DELAY_MS = 2_000L
+        const val MAX_ATTEMPTS = 3
+        const val RETRY_DELAY_MS = 1_000L
+        const val HTTP_SERVER_ERROR = 500
     }
 }

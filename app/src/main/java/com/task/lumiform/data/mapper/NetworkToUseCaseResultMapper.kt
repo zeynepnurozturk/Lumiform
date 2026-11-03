@@ -14,9 +14,8 @@ inline fun <T, R> NetworkResult<T>.toUseCaseResult(
     is NetworkResult.ApiError -> UseCaseResult.Error(
         UseCaseError.ApiError(code = code, message = message.orEmpty())
     )
-    is NetworkResult.NetworkError -> UseCaseResult.Error(
-        UseCaseError.NetworkError(throwable.message ?: NETWORK_ERROR_MESSAGE)
-    )
+    // The raw exception message (e.g. "Unable to resolve host") is not meant for the user.
+    is NetworkResult.NetworkError -> UseCaseResult.Error(UseCaseError.NetworkError(NETWORK_ERROR_MESSAGE))
     is NetworkResult.NullResult -> emptyObject.toSuccessOrEmptyError()
     is NetworkResult.Success -> {
         val data = data
