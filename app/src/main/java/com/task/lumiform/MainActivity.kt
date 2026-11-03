@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.task.lumiform.ui.LumiformHomeRoute
 import com.task.lumiform.ui.theme.LumiformTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -16,7 +17,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LumiformTheme {
-
+                LumiformHomeRoute()
             }
         }
     }

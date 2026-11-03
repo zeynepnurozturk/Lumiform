@@ -12,7 +12,6 @@ class LumiformTestServiceImpl @Inject constructor(
 
     @Suppress("TooGenericExceptionCaught")
     override suspend fun getTestCase(): NetworkResult<List<LumiformItemDto>> {
-        // There is no backend yet, so the response is served from assets/mock.
         return try {
             val response = mockNetworkResponseProvider.getApiResponse<List<LumiformItemDto>>(ResponseType.LUMIFORM_TEST_CASE)
             NetworkResult.Success(data = response, code = 200)
