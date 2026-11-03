@@ -26,12 +26,8 @@ private fun List<PageContentDomainModel>.choiceQuestions(): List<ChoiceQuestionD
     }
 }
 
-private fun ChoiceQuestionDomainModel.toSummaryAnswer(selectedIds: List<Int>): LumiformSummaryAnswerUiModel {
-    val selected = responseSet.responses.filter { it.id in selectedIds }
-    return LumiformSummaryAnswerUiModel(
-        questionId = id,
-        question = content,
-        answers = selected.map { it.label },
-        score = selected.sumOf { it.score ?: 0 }
-    )
-}
+private fun ChoiceQuestionDomainModel.toSummaryAnswer(selectedIds: List<Int>) = LumiformSummaryAnswerUiModel(
+    questionId = id,
+    question = content,
+    answers = responseSet.responses.filter { it.id in selectedIds }.map { it.label }
+)

@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.work.WorkManager
 import com.task.lumiform.data.local.LumiformDatabase
-import com.task.lumiform.data.local.PageDao
+import com.task.lumiform.data.local.TestCaseDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,11 +21,12 @@ object DatabaseModule {
     fun provideLumiformDatabase(
         @ApplicationContext context: Context
     ): LumiformDatabase = Room.databaseBuilder(context, LumiformDatabase::class.java, LumiformDatabase.DATABASE_NAME)
-        .addMigrations(LumiformDatabase.MIGRATION_1_2, LumiformDatabase.MIGRATION_2_3)
+        // Earlier builds stored pages as JSON in schema version 3. It is only a cache, so that file is dropped.
+        .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
         .build()
 
     @Provides
-    fun providePageDao(database: LumiformDatabase): PageDao = database.pageDao()
+    fun provideTestCaseDao(database: LumiformDatabase): TestCaseDao = database.testCaseDao()
 
     @Singleton
     @Provides

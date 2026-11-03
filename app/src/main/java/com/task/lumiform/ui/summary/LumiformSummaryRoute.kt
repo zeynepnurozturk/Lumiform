@@ -39,14 +39,12 @@ fun LumiformSummaryRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val summaryPages by viewModel.summaryPages.collectAsStateWithLifecycle()
-    val totalScore by viewModel.totalScore.collectAsStateWithLifecycle()
     val isSubmitted by viewModel.isSubmitted.collectAsStateWithLifecycle()
 
     LumiformSummaryScreen(
         modifier = modifier,
         uiState = uiState,
         summaryPages = summaryPages,
-        totalScore = totalScore,
         isSubmitted = isSubmitted,
         callbacks = viewModel.callbacks,
     )
@@ -57,7 +55,6 @@ fun LumiformSummaryRoute(
 fun LumiformSummaryScreen(
     uiState: LumiformSummaryUiState,
     summaryPages: List<LumiformSummaryPageUiModel>,
-    totalScore: Int,
     isSubmitted: Boolean,
     callbacks: LumiformSummaryCallbacks,
     modifier: Modifier = Modifier,
@@ -112,7 +109,7 @@ fun LumiformSummaryScreen(
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(16.dp)
                 )
-                LumiformSummaryUiState.Success -> SummaryContent(pages = summaryPages, totalScore = totalScore)
+                LumiformSummaryUiState.Success -> SummaryContent(pages = summaryPages)
             }
         }
     }
@@ -121,7 +118,6 @@ fun LumiformSummaryScreen(
 @Composable
 private fun SummaryContent(
     pages: List<LumiformSummaryPageUiModel>,
-    totalScore: Int,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -129,13 +125,6 @@ private fun SummaryContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item(key = "total_score") {
-            TitleComponent(
-                title = stringResource(R.string.summary_total_score, totalScore),
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
-
         items(pages, key = { it.id }) { page ->
             SectionComponent(title = page.title) {
                 page.answers.forEach { answer -> SummaryAnswer(answer = answer) }

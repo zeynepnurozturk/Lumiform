@@ -31,9 +31,6 @@ class LumiformSummaryViewModel @Inject constructor(
     private val _summaryPages = MutableStateFlow<List<LumiformSummaryPageUiModel>>(emptyList())
     val summaryPages = _summaryPages.asStateFlow()
 
-    private val _totalScore = MutableStateFlow(0)
-    val totalScore = _totalScore.asStateFlow()
-
     private val _isSubmitted = MutableStateFlow(false)
     val isSubmitted = _isSubmitted.asStateFlow()
 
@@ -57,7 +54,6 @@ class LumiformSummaryViewModel @Inject constructor(
                     pageIds = result.result.model.map { it.id }
                     val pages = result.result.model.toSummaryPages(lumiformTestUseCase.getAnswers())
                     _summaryPages.value = pages
-                    _totalScore.value = pages.sumOf { page -> page.answers.sumOf { it.score } }
                     _uiState.value = LumiformSummaryUiState.Success
                 }
                 is UseCaseResult.Error -> _uiState.value = LumiformSummaryUiState.Error(result.message)
@@ -67,6 +63,8 @@ class LumiformSummaryViewModel @Inject constructor(
     }
 
     // Answers are already in Room, so submitting only queues every page; pages already synced are skipped by the worker.
+    // TODO: Once the submission is confirmed as successful, clear the back stack so the user can't return to the same QA,
+    //  and delete the cached pages and answers from Room.
     private fun onSubmitClick() {
         if (_uiState.value != LumiformSummaryUiState.Success || _isSubmitted.value) return
         pageIds.forEach(lumiformTestUseCase::queuePageForSync)

@@ -12,6 +12,5 @@ data class LumiformSummaryPageUiModel(
 data class LumiformSummaryAnswerUiModel(
     val questionId: Int,
     val question: String,
-    val answers: List<String>,
-    val score: Int
+    val answers: List<String>
 )

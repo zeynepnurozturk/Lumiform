@@ -1,7 +1,8 @@
 package com.task.lumiform.data.repo
 
-import com.task.lumiform.data.local.PageDao
-import com.task.lumiform.data.local.PageEntity
+import com.task.lumiform.data.local.ItemEntity
+import com.task.lumiform.data.local.ResponseEntity
+import com.task.lumiform.data.local.TestCaseDao
 import com.task.lumiform.data.remote.NetworkResult
 import com.task.lumiform.data.remote.dto.AnswerSubmissionDto
 import com.task.lumiform.data.remote.dto.SubmissionChoiceQuestionDto
@@ -17,7 +18,6 @@ import com.task.lumiform.domain.model.SectionDomainModel
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -73,26 +73,26 @@ class LumiformTestRepositoryImplTest {
 
     @Test
     fun `saved answers are returned per question and mark the page unsynced`() = runTest {
-        val pageDao = FakePageDao()
-        val repository = newRepository(FakeService(NetworkResult.Success(listOf(choicePage()))), pageDao)
+        val dao = FakeTestCaseDao()
+        val repository = newRepository(FakeService(NetworkResult.Success(listOf(choicePage()))), dao)
         repository.getTestCase()
 
         repository.saveAnswer(pageId = 1, questionId = 3, selectedResponseIds = listOf(5))
 
         assertEquals(mapOf(3 to listOf(5)), repository.getAnswers())
-        assertFalse(pageDao.pages.getValue(1).isSynced)
+        assertFalse(dao.items.getValue(1).isSynced)
     }
 
     @Test
     fun `selections survive a refresh and a failed refresh`() = runTest {
-        val pageDao = FakePageDao()
-        val online = newRepository(FakeService(NetworkResult.Success(listOf(choicePage()))), pageDao)
+        val dao = FakeTestCaseDao()
+        val online = newRepository(FakeService(NetworkResult.Success(listOf(choicePage()))), dao)
         online.getTestCase()
         online.saveAnswer(pageId = 1, questionId = 3, selectedResponseIds = listOf(5))
 
-        val refreshed = newRepository(FakeService(NetworkResult.Success(listOf(choicePage()))), pageDao)
+        val refreshed = newRepository(FakeService(NetworkResult.Success(listOf(choicePage()))), dao)
         val refreshedPage = (refreshed.getTestCase() as UseCaseResult.Success).result.model.single()
-        val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), pageDao)
+        val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), dao)
         val offlinePage = (offline.getTestCase() as UseCaseResult.Success).result.model.single()
 
         listOf(refreshedPage, offlinePage).forEach { page ->
@@ -100,14 +100,14 @@ class LumiformTestRepositoryImplTest {
             val responses = (section.items.single() as ChoiceQuestionDomainModel).responseSet.responses
             assertEquals(listOf(true, false), responses.map { it.selected })
         }
-        assertFalse(pageDao.pages.getValue(1).isSynced)
+        assertFalse(dao.items.getValue(1).isSynced)
     }
 
     @Test
     fun `sync sends the whole page with its selections and marks the page synced`() = runTest {
-        val pageDao = FakePageDao()
+        val dao = FakeTestCaseDao()
         val service = FakeService(NetworkResult.Success(listOf(choicePage())))
-        val repository = newRepository(service, pageDao)
+        val repository = newRepository(service, dao)
         repository.getTestCase()
         repository.saveAnswer(pageId = 1, questionId = 3, selectedResponseIds = listOf(5))
         repository.saveAnswer(pageId = 1, questionId = 4, selectedResponseIds = listOf(6))
@@ -122,24 +122,24 @@ class LumiformTestRepositoryImplTest {
         assertEquals(listOf(true, false), sectionQuestion.responseSet.responses.map { it.selected })
         val topQuestion = submission.items.last() as SubmissionChoiceQuestionDto
         assertEquals(6, topQuestion.responseSet.responses.single { it.selected }.id)
-        assertTrue(pageDao.pages.getValue(1).isSynced)
+        assertTrue(dao.items.getValue(1).isSynced)
     }
 
     @Test
     fun `failed sync keeps the page unsynced`() = runTest {
-        val pageDao = FakePageDao()
+        val dao = FakeTestCaseDao()
         val service = FakeService(
             NetworkResult.Success(listOf(choicePage())),
             submitResult = NetworkResult.NetworkError(Exception("offline")),
         )
-        val repository = newRepository(service, pageDao)
+        val repository = newRepository(service, dao)
         repository.getTestCase()
         repository.saveAnswer(pageId = 1, questionId = 3, selectedResponseIds = listOf(5))
 
         val result = repository.syncPageAnswers(pageId = 1)
 
         assertTrue(result.isFailure())
-        assertFalse(pageDao.pages.getValue(1).isSynced)
+        assertFalse(dao.items.getValue(1).isSynced)
     }
 
     @Test
@@ -156,11 +156,11 @@ class LumiformTestRepositoryImplTest {
 
     @Test
     fun `successful response is cached and served when the next request fails`() = runTest {
-        val pageDao = FakePageDao()
+        val dao = FakeTestCaseDao()
         val page = PageDto(id = 1, title = "Cached", items = listOf(SectionDto(id = 2, title = "Section")))
-        newRepository(FakeService(NetworkResult.Success(listOf(page))), pageDao = pageDao).getTestCase()
+        newRepository(FakeService(NetworkResult.Success(listOf(page))), dao = dao).getTestCase()
 
-        val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), pageDao = pageDao)
+        val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), dao = dao)
         val result = offline.getTestCase()
 
         val cached = (result as UseCaseResult.Success).result.model.single()
@@ -170,12 +170,12 @@ class LumiformTestRepositoryImplTest {
 
     @Test
     fun `new response replaces the cached pages`() = runTest {
-        val pageDao = FakePageDao()
-        newRepository(FakeService(NetworkResult.Success(listOf(PageDto(1), PageDto(2)))), pageDao = pageDao)
+        val dao = FakeTestCaseDao()
+        newRepository(FakeService(NetworkResult.Success(listOf(PageDto(1), PageDto(2)))), dao = dao)
             .getTestCase()
-        newRepository(FakeService(NetworkResult.Success(listOf(PageDto(3)))), pageDao = pageDao).getTestCase()
+        newRepository(FakeService(NetworkResult.Success(listOf(PageDto(3)))), dao = dao).getTestCase()
 
-        val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), pageDao = pageDao)
+        val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), dao = dao)
 
         val pages = (offline.getTestCase() as UseCaseResult.Success).result.model
         assertEquals(listOf(3), pages.map { it.id })
@@ -208,8 +208,8 @@ class LumiformTestRepositoryImplTest {
         )
     )
 
-    private fun newRepository(service: FakeService, pageDao: FakePageDao = FakePageDao()) =
-        LumiformTestRepositoryImpl(service, pageDao, Json) { error("WorkManager is not used in these tests") }
+    private fun newRepository(service: FakeService, dao: FakeTestCaseDao = FakeTestCaseDao()) =
+        LumiformTestRepositoryImpl(service, dao) { error("WorkManager is not used in these tests") }
 
     private class FakeService(
         private val result: NetworkResult<List<PageDto>> = NetworkResult.NullResult(),
@@ -223,19 +223,33 @@ class LumiformTestRepositoryImplTest {
         }
     }
 
-    private class FakePageDao : PageDao() {
-        val pages = linkedMapOf<Int, PageEntity>()
-        override suspend fun getAll() = pages.values.sortedBy { it.position }
-        override suspend fun getById(pageId: Int) = pages[pageId]
-        override suspend fun upsert(page: PageEntity) {
-            pages[page.id] = page
+    // Keeps the rows in maps; the transaction methods of TestCaseDao run on top of these.
+    private class FakeTestCaseDao : TestCaseDao() {
+        val items = linkedMapOf<Int, ItemEntity>()
+        val responses = linkedMapOf<Pair<Int, Int>, ResponseEntity>()
+        override suspend fun getItems() = items.values.sortedBy { it.position }
+        override suspend fun getResponses() = responses.values.sortedBy { it.position }
+        override suspend fun getPages() = items.values.filter { it.parentId == null }
+        override suspend fun getPage(pageId: Int) = items[pageId]?.takeIf { it.parentId == null }
+        override suspend fun getSelectedResponses() = getResponses().filter { it.selected }
+        override suspend fun insertItems(items: List<ItemEntity>) {
+            items.forEach { this.items[it.id] = it }
+        }
+        override suspend fun insertResponses(responses: List<ResponseEntity>) {
+            responses.forEach { this.responses[it.questionId to it.id] = it }
+        }
+        override suspend fun deleteItems() = items.clear()
+        override suspend fun deleteResponses() = responses.clear()
+        override suspend fun setSelection(questionId: Int, responseIds: List<Int>) {
+            responses.replaceAll { _, response ->
+                if (response.questionId == questionId) response.copy(selected = response.id in responseIds) else response
+            }
+        }
+        override suspend fun markChanged(pageId: Int, updatedAt: Long) {
+            items[pageId]?.let { items[pageId] = it.copy(isSynced = false, updatedAt = updatedAt) }
         }
         override suspend fun markSynced(pageId: Int, updatedAt: Long) {
-            pages[pageId]?.takeIf { it.updatedAt == updatedAt }?.let { pages[pageId] = it.copy(isSynced = true) }
-        }
-        override suspend fun deleteAll() = pages.clear()
-        override suspend fun insertAll(pages: List<PageEntity>) {
-            pages.forEach { this.pages[it.id] = it }
+            items[pageId]?.takeIf { it.updatedAt == updatedAt }?.let { items[pageId] = it.copy(isSynced = true) }
         }
     }
 }
