@@ -14,8 +14,10 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 sealed interface LumiformHomeUiState {
     data object Loading : LumiformHomeUiState
@@ -36,13 +38,15 @@ class LumiformHomeViewModel @Inject constructor(
     private val _lumiformTestResult: MutableStateFlow<List<LumiformHomePageUiModel>?> = MutableStateFlow(null)
     val lumiformTestResult = _lumiformTestResult.asStateFlow()
 
-    // Selected response ids per choice question id.
-    // TODO: Maybe keep selections in Room instead of in memory, so they survive app restarts.
+    // Selected response ids per choice question id. Restored from Room on load and saved on every tap.
     private val _selectedResponses = MutableStateFlow<Map<Int, List<Int>>>(emptyMap())
     val selectedResponses = _selectedResponses.asStateFlow()
 
     // Index of the page on screen. Kept in SavedStateHandle so it survives process death.
     val currentPageIndex: StateFlow<Int> = savedStateHandle.getStateFlow(KEY_CURRENT_PAGE_INDEX, 0)
+
+    // Keeps saves in tap order, so the last tap is always the one left in Room.
+    private val saveMutex = Mutex()
 
     val callbacks by lazy {
         LumiformHomeCallbacks(
@@ -63,6 +67,7 @@ class LumiformHomeViewModel @Inject constructor(
             when (val result = lumiformTestUseCase()) {
                 is UseCaseResult.Success -> {
                     val pages = result.result.model.toHomePages()
+                    _selectedResponses.value = lumiformTestUseCase.getAnswers()
                     _lumiformTestResult.value = pages
                     // A restored index can point past the end if the API now returns fewer pages.
                     savedStateHandle[KEY_CURRENT_PAGE_INDEX] =
@@ -77,7 +82,8 @@ class LumiformHomeViewModel @Inject constructor(
     }
 
     private fun onResponseClick(question: LumiformHomeItemUiModel.Choice, responseId: Int) {
-        _selectedResponses.update { selections ->
+        val pageId = currentPage()?.id ?: return
+        val selections = _selectedResponses.updateAndGet { selections ->
             val selected = selections[question.id].orEmpty()
             val newSelected = when {
                 question.selectionType == SelectionType.Single -> listOf(responseId)
@@ -85,6 +91,12 @@ class LumiformHomeViewModel @Inject constructor(
                 else -> selected + responseId
             }
             selections + (question.id to newSelected)
+        }
+        val selected = selections[question.id].orEmpty()
+        viewModelScope.launch {
+            saveMutex.withLock {
+                lumiformTestUseCase.saveAnswer(pageId, question.id, selected)
+            }
         }
     }
 
@@ -94,6 +106,7 @@ class LumiformHomeViewModel @Inject constructor(
     }
 
     private fun onNextClick() {
+        queueCurrentPageForSync()
         val index = currentPageIndex.value
         if (index < _lumiformTestResult.value.orEmpty().lastIndex) {
             savedStateHandle[KEY_CURRENT_PAGE_INDEX] = index + 1
@@ -102,8 +115,19 @@ class LumiformHomeViewModel @Inject constructor(
 
     private fun onFinishClick() {
         // TODO: Show a summary page with the selected answers and an option to go back and edit them.
-        // TODO: Submit selectedResponses once there is an endpoint for it.
+        queueCurrentPageForSync()
     }
+
+    // Waits for pending saves so the worker finds this page's latest answers in Room.
+    private fun queueCurrentPageForSync() {
+        val pageId = currentPage()?.id ?: return
+        viewModelScope.launch {
+            saveMutex.withLock { lumiformTestUseCase.queuePageForSync(pageId) }
+        }
+    }
+
+    private fun currentPage(): LumiformHomePageUiModel? =
+        _lumiformTestResult.value?.getOrNull(currentPageIndex.value)
 
     private companion object {
         const val KEY_CURRENT_PAGE_INDEX = "current_page_index"

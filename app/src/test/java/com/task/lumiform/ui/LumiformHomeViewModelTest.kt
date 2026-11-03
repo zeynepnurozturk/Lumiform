@@ -179,6 +179,49 @@ class LumiformHomeViewModelTest {
         assertEquals(0, viewModel.currentPageIndex.value)
     }
 
+    @Test
+    fun `tapping a response saves it with its page`() = runTest {
+        val repository = FakeRepository()
+        val viewModel = loadedViewModel(multipleSelection = true, repository = repository)
+        val question = viewModel.choiceQuestion()
+
+        viewModel.callbacks.onResponseClick(question, 1)
+        viewModel.callbacks.onResponseClick(question, 2)
+
+        assertEquals(mapOf(QUESTION_ID to listOf(1, 2)), repository.savedAnswers)
+        assertEquals(1, repository.savedPageIds[QUESTION_ID])
+    }
+
+    @Test
+    fun `saved answers are restored on load`() = runTest {
+        val repository = FakeRepository().apply { savedAnswers[QUESTION_ID] = listOf(2) }
+
+        val viewModel = loadedViewModel(multipleSelection = false, repository = repository)
+
+        assertEquals(mapOf(QUESTION_ID to listOf(2)), viewModel.selectedResponses.value)
+    }
+
+    @Test
+    fun `next and finish queue the page being left`() = runTest {
+        val repository = FakeRepository()
+        val viewModel = pagedViewModel(pageCount = 2, repository = repository)
+
+        viewModel.callbacks.onNextClick()
+        viewModel.callbacks.onFinishClick()
+
+        assertEquals(listOf(1, 2), repository.queuedPageIds)
+    }
+
+    @Test
+    fun `previous does not queue the page`() = runTest {
+        val repository = FakeRepository()
+        val viewModel = pagedViewModel(pageCount = 2, savedStateHandle = savedPageIndex(1), repository = repository)
+
+        viewModel.callbacks.onPreviousClick()
+
+        assertEquals(emptyList<Int>(), repository.queuedPageIds)
+    }
+
     private fun newViewModel(
         repository: FakeRepository,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
@@ -187,8 +230,8 @@ class LumiformHomeViewModelTest {
     private fun pagedViewModel(
         pageCount: Int,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
+        repository: FakeRepository = FakeRepository(),
     ): LumiformHomeViewModel {
-        val repository = FakeRepository()
         val viewModel = newViewModel(repository, savedStateHandle)
         val pages = (1..pageCount).map { id ->
             PageDomainModel(id = id, title = "Page $id", items = listOf(TextQuestionDomainModel(id = id * 100)))
@@ -199,8 +242,11 @@ class LumiformHomeViewModelTest {
 
     private fun savedPageIndex(index: Int) = SavedStateHandle(mapOf("current_page_index" to index))
 
-    private fun loadedViewModel(multipleSelection: Boolean, extraPages: Int = 0): LumiformHomeViewModel {
-        val repository = FakeRepository()
+    private fun loadedViewModel(
+        multipleSelection: Boolean,
+        extraPages: Int = 0,
+        repository: FakeRepository = FakeRepository(),
+    ): LumiformHomeViewModel {
         val viewModel = newViewModel(repository)
         val choice = ChoiceQuestionDomainModel(
             id = QUESTION_ID,
@@ -229,6 +275,22 @@ class LumiformHomeViewModelTest {
 
     private class FakeRepository : LumiformTestRepository {
         val result = CompletableDeferred<UseCaseResult<LumiformTestUseCase.Result>>()
+        val savedAnswers = mutableMapOf<Int, List<Int>>()
+        val savedPageIds = mutableMapOf<Int, Int>()
+        val queuedPageIds = mutableListOf<Int>()
         override suspend fun getTestCase() = result.await()
+        override suspend fun getAnswers() = savedAnswers.toMap()
+        override suspend fun saveAnswer(
+            pageId: Int,
+            questionId: Int,
+            selectedResponseIds: List<Int>
+        ) {
+            savedAnswers[questionId] = selectedResponseIds
+            savedPageIds[questionId] = pageId
+        }
+        override fun queuePageForSync(pageId: Int) {
+            queuedPageIds += pageId
+        }
+        override suspend fun syncPageAnswers(pageId: Int) = UseCaseResult.Success(Unit)
     }
 }
