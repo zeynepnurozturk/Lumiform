@@ -5,11 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.task.lumiform.ui.navigation.LumiformNavHost
+import com.task.lumiform.ui.navigation.LumiformNavigator
 import com.task.lumiform.ui.theme.LumiformTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var navigator: LumiformNavigator
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -17,7 +21,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LumiformTheme {
-                LumiformNavHost()
+                LumiformNavHost(navigator = navigator)
             }
         }
     }

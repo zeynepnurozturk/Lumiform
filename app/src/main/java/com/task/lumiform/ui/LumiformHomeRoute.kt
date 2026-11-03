@@ -37,7 +37,6 @@ private val ThumbnailSize = 120.dp
 
 @Composable
 fun LumiformHomeRoute(
-    onImageClick: (src: String, title: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LumiformHomeViewModel = hiltViewModel(),
 ) {
@@ -53,7 +52,6 @@ fun LumiformHomeRoute(
         currentPageIndex = currentPageIndex,
         selectedResponses = selectedResponses,
         callbacks = viewModel.callbacks,
-        onImageClick = onImageClick,
     )
 }
 
@@ -64,7 +62,6 @@ fun LumiformHomeScreen(
     currentPageIndex: Int,
     selectedResponses: Map<Int, List<Int>>,
     callbacks: LumiformHomeCallbacks,
-    onImageClick: (src: String, title: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pages = lumiformTestResult.orEmpty()
@@ -111,7 +108,6 @@ fun LumiformHomeScreen(
                             page = currentPage,
                             selectedResponses = selectedResponses,
                             callbacks = callbacks,
-                            onImageClick = onImageClick,
                         )
                     }
                 }
@@ -125,7 +121,6 @@ private fun LumiformPageContent(
     page: LumiformHomePageUiModel,
     selectedResponses: Map<Int, List<Int>>,
     callbacks: LumiformHomeCallbacks,
-    onImageClick: (src: String, title: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -146,7 +141,6 @@ private fun LumiformPageContent(
                 item = item,
                 selectedResponses = selectedResponses,
                 callbacks = callbacks,
-                onImageClick = onImageClick,
             )
         }
     }
@@ -177,7 +171,6 @@ private fun LumiformHomeItem(
     item: LumiformHomeItemUiModel,
     selectedResponses: Map<Int, List<Int>>,
     callbacks: LumiformHomeCallbacks,
-    onImageClick: (src: String, title: String) -> Unit,
 ) {
     when (item) {
         is LumiformHomeItemUiModel.Section -> SectionComponent(title = item.title) {
@@ -186,7 +179,6 @@ private fun LumiformHomeItem(
                     item = child,
                     selectedResponses = selectedResponses,
                     callbacks = callbacks,
-                    onImageClick = onImageClick,
                 )
             }
         }
@@ -198,7 +190,7 @@ private fun LumiformHomeItem(
             src = item.src,
             title = item.title,
             modifier = Modifier.size(ThumbnailSize),
-            onClick = { onImageClick(item.src, item.title) }
+            onClick = { callbacks.onImageClick(item.src, item.title) }
         )
         is LumiformHomeItemUiModel.Choice -> ChoiceComponent(
             question = item,

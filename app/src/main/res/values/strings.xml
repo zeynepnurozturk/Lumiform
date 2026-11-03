@@ -11,4 +11,9 @@
     <string name="page_indicator">%1$d / %2$d</string>
     <string name="page_empty">This page has no content.</string>
     <string name="pages_empty">There are no pages to show.</string>
+    <string name="summary_title">Summary</string>
+    <string name="summary_total_score">Total score: %1$d</string>
+    <string name="summary_no_answer">No answer</string>
+    <string name="summary_submit">Submit</string>
+    <string name="summary_submitted">Submitted</string>
 </resources>

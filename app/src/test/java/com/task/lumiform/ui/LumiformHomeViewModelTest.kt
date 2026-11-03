@@ -12,6 +12,7 @@ import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel
 import com.task.lumiform.ui.model.LumiformHomePageUiModel
+import com.task.lumiform.ui.navigation.LumiformNavigator
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -225,7 +226,7 @@ class LumiformHomeViewModelTest {
     private fun newViewModel(
         repository: FakeRepository,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
-    ) = LumiformHomeViewModel(LumiformTestUseCase(repository), savedStateHandle)
+    ) = LumiformHomeViewModel(LumiformTestUseCase(repository), LumiformNavigator(), savedStateHandle)
 
     private fun pagedViewModel(
         pageCount: Int,

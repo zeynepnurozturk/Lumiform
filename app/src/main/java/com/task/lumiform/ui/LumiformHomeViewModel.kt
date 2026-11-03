@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseResult
 import com.task.lumiform.ui.mapper.toHomePages
+import com.task.lumiform.ui.navigation.LumiformDestination
+import com.task.lumiform.ui.navigation.LumiformNavigator
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel.Choice.SelectionType
 import com.task.lumiform.ui.model.LumiformHomePageUiModel
@@ -29,6 +31,7 @@ sealed interface LumiformHomeUiState {
 @HiltViewModel
 class LumiformHomeViewModel @Inject constructor(
     private val lumiformTestUseCase: LumiformTestUseCase,
+    private val navigator: LumiformNavigator,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -54,6 +57,7 @@ class LumiformHomeViewModel @Inject constructor(
             onPreviousClick = ::onPreviousClick,
             onNextClick = ::onNextClick,
             onFinishClick = ::onFinishClick,
+            onImageClick = ::onImageClick,
         )
     }
 
@@ -114,8 +118,12 @@ class LumiformHomeViewModel @Inject constructor(
     }
 
     private fun onFinishClick() {
-        // TODO: Show a summary page with the selected answers and an option to go back and edit them.
         queueCurrentPageForSync()
+        navigator.navigate(LumiformDestination.Summary)
+    }
+
+    private fun onImageClick(src: String, title: String) {
+        navigator.navigate(LumiformDestination.FullImage(src = src, title = title))
     }
 
     // Waits for pending saves so the worker finds this page's latest answers in Room.
@@ -139,4 +147,5 @@ data class LumiformHomeCallbacks(
     val onPreviousClick: () -> Unit,
     val onNextClick: () -> Unit,
     val onFinishClick: () -> Unit,
+    val onImageClick: (src: String, title: String) -> Unit,
 )

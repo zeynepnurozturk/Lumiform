@@ -10,4 +10,7 @@ sealed interface LumiformDestination {
 
     @Serializable
     data class FullImage(val src: String, val title: String) : LumiformDestination
+
+    @Serializable
+    data object Summary : LumiformDestination
 }

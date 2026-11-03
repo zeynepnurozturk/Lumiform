@@ -22,7 +22,6 @@ import com.task.lumiform.ui.components.TitleComponent
 
 @Composable
 fun LumiformImageRoute(
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LumiformImageViewModel = hiltViewModel(),
 ) {
@@ -30,7 +29,7 @@ fun LumiformImageRoute(
         modifier = modifier,
         src = viewModel.src,
         title = viewModel.title,
-        onBack = onBack,
+        callbacks = viewModel.callbacks,
     )
 }
 
@@ -39,7 +38,7 @@ fun LumiformImageRoute(
 fun LumiformImageScreen(
     src: String,
     title: String,
-    onBack: () -> Unit,
+    callbacks: LumiformImageCallbacks,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -48,7 +47,7 @@ fun LumiformImageScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = callbacks.onBackClick) {
                         Icon(painter = painterResource(R.drawable.ic_arrow_back), contentDescription = "Back")
                     }
                 }
