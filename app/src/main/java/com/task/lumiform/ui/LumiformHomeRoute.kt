@@ -1,9 +1,11 @@
 package com.task.lumiform.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,13 +15,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.task.lumiform.R
 import com.task.lumiform.ui.components.ChoiceComponent
 import com.task.lumiform.ui.components.ImageComponent
+import com.task.lumiform.ui.components.PageNavigationComponent
 import com.task.lumiform.ui.components.SectionComponent
 import com.task.lumiform.ui.components.TextComponent
 import com.task.lumiform.ui.components.TitleComponent
@@ -37,11 +44,13 @@ fun LumiformHomeRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lumiformTestResult by viewModel.lumiformTestResult.collectAsStateWithLifecycle()
     val selectedResponses by viewModel.selectedResponses.collectAsStateWithLifecycle()
+    val currentPageIndex by viewModel.currentPageIndex.collectAsStateWithLifecycle()
 
     LumiformHomeScreen(
         modifier = modifier,
         uiState = uiState,
         lumiformTestResult = lumiformTestResult,
+        currentPageIndex = currentPageIndex,
         selectedResponses = selectedResponses,
         callbacks = viewModel.callbacks,
         onImageClick = onImageClick,
@@ -52,12 +61,34 @@ fun LumiformHomeRoute(
 fun LumiformHomeScreen(
     uiState: LumiformHomeUiState,
     lumiformTestResult: List<LumiformHomePageUiModel>?,
+    currentPageIndex: Int,
     selectedResponses: Map<Int, List<Int>>,
     callbacks: LumiformHomeCallbacks,
     onImageClick: (src: String, title: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier) { innerPadding ->
+    val pages = lumiformTestResult.orEmpty()
+    val showPage = uiState == LumiformHomeUiState.Success
+
+    // System back goes to the previous page; only the first page leaves the screen.
+    BackHandler(enabled = showPage && currentPageIndex > 0) {
+        callbacks.onPreviousClick()
+    }
+
+    Scaffold(
+        modifier = modifier,
+        bottomBar = {
+            if (showPage) {
+                PageNavigationComponent(
+                    pageIndex = currentPageIndex,
+                    pageCount = pages.size,
+                    onPreviousClick = callbacks.onPreviousClick,
+                    onNextClick = callbacks.onNextClick,
+                    onFinishClick = callbacks.onFinishClick,
+                )
+            }
+        }
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -72,20 +103,26 @@ fun LumiformHomeScreen(
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(16.dp)
                 )
-                LumiformHomeUiState.Success -> LumiformHomeContent(
-                    pages = lumiformTestResult.orEmpty(),
-                    selectedResponses = selectedResponses,
-                    callbacks = callbacks,
-                    onImageClick = onImageClick,
-                )
+                LumiformHomeUiState.Empty -> EmptyPageContent(message = stringResource(R.string.pages_empty))
+                LumiformHomeUiState.Success -> {
+                    val currentPage = pages[currentPageIndex]
+                    key(currentPage.id) {
+                        LumiformPageContent(
+                            page = currentPage,
+                            selectedResponses = selectedResponses,
+                            callbacks = callbacks,
+                            onImageClick = onImageClick,
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun LumiformHomeContent(
-    pages: List<LumiformHomePageUiModel>,
+private fun LumiformPageContent(
+    page: LumiformHomePageUiModel,
     selectedResponses: Map<Int, List<Int>>,
     callbacks: LumiformHomeCallbacks,
     onImageClick: (src: String, title: String) -> Unit,
@@ -96,23 +133,39 @@ private fun LumiformHomeContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        pages.forEach { page ->
-            item(key = page.id) {
-                TitleComponent(
-                    title = page.title,
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
-            items(page.items, key = { it.id }) { item ->
-                LumiformHomeItem(
-                    item = item,
-                    selectedResponses = selectedResponses,
-                    callbacks = callbacks,
-                    onImageClick = onImageClick,
-                )
-            }
+        item(key = page.id) {
+            TitleComponent(
+                title = page.title,
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(top = 16.dp)
+            )
         }
+
+        items(page.items, key = { it.id }) { item ->
+            LumiformHomeItem(
+                item = item,
+                selectedResponses = selectedResponses,
+                callbacks = callbacks,
+                onImageClick = onImageClick,
+            )
+        }
+    }
+}
+
+/**
+ * Message shown when there is nothing to draw, either no pages at all or a page without items.
+ */
+@Composable
+private fun EmptyPageContent(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.padding(16.dp), contentAlignment = Alignment.Center) {
+        TextComponent(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
