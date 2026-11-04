@@ -19,11 +19,12 @@ fun ImageComponent(
     src: String,
     title: String,
     modifier: Modifier = Modifier,
+    contentDescription: String? = title,
     onClick: (() -> Unit)? = null,
 ) {
     AsyncImage(
         model = src,
-        contentDescription = title,
+        contentDescription = contentDescription,
         placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
         error = painterResource(R.drawable.ic_broken_image),
         fallback = painterResource(R.drawable.ic_broken_image),

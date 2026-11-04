@@ -23,12 +23,14 @@ fun ImageQuestionComponent(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.clickable(role = Role.Image, onClick = onClick),
+        modifier = modifier.clickable(role = Role.Button, onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        // The title is shown as text below, so the image itself isn't described again for screen readers.
         ImageComponent(
             src = src,
             title = title,
+            contentDescription = if (title.isNotEmpty()) null else title,
             modifier = Modifier.size(thumbnailSize)
         )
         if (title.isNotEmpty()) {
