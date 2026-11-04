@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import timber.log.Timber
 
 class LumiformTestServiceImpl @Inject constructor(
     private val api: LumiformApi,
@@ -47,10 +48,13 @@ class LumiformTestServiceImpl @Inject constructor(
     }
 
     /**
-     * There is no submit endpoint yet, so this prints the request body instead of sending it.
+     * There is no submit endpoint yet, so this logs the request body instead of sending it.
      */
     override suspend fun submitAnswers(submission: AnswerSubmissionDto): NetworkResult<Unit> {
-        println("[AnswerSync] POST $SUBMIT_ANSWERS_PATH ${json.encodeToString(submission)}")
+        // Only debug builds plant a tree, so release builds skip encoding the body.
+        if (Timber.treeCount > 0) {
+            Timber.tag("AnswerSync").d("POST $SUBMIT_ANSWERS_PATH ${json.encodeToString(submission)}")
+        }
         return NetworkResult.Success(data = Unit, code = 200)
     }
 

@@ -19,6 +19,7 @@ import com.task.lumiform.domain.model.SectionDomainModel
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
 import java.io.IOException
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -282,6 +283,7 @@ class LumiformTestRepositoryImplTest {
         override suspend fun getPages() = items.values.filter { it.parentId == null }
         override suspend fun getPage(pageId: Int) = items[pageId]?.takeIf { it.parentId == null }
         override suspend fun getSelectedResponses() = getResponses().filter { it.selected }
+        override fun observeUnsyncedPageCount() = flowOf(items.values.count { it.parentId == null && !it.isSynced })
         override suspend fun insertItems(items: List<ItemEntity>) {
             items.forEach { this.items[it.id] = it }
         }

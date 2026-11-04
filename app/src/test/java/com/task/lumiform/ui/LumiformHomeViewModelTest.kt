@@ -6,8 +6,10 @@ import com.task.lumiform.domain.model.ChoiceQuestionDomainModel
 import com.task.lumiform.domain.model.PageDomainModel
 import com.task.lumiform.domain.model.ResponseOptionDomainModel
 import com.task.lumiform.domain.model.ResponseSetDomainModel
+import com.task.lumiform.domain.model.SyncStatus
 import com.task.lumiform.domain.model.TextQuestionDomainModel
 import com.task.lumiform.domain.repository.LumiformTestRepository
+import com.task.lumiform.domain.repository.SyncStatusRepository
 import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
@@ -17,6 +19,8 @@ import com.task.lumiform.ui.navigation.LumiformNavigator
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -273,10 +277,36 @@ class LumiformHomeViewModelTest {
         assertEquals(emptyList<Int>(), repository.queuedPageIds)
     }
 
+    @Test
+    fun `sync status follows the repository while collected`() = runTest {
+        val syncStatus = FakeSyncStatusRepository()
+        val viewModel = newViewModel(FakeRepository(), syncStatusRepository = syncStatus)
+        val collector = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.syncStatus.collect {} }
+
+        assertEquals(SyncStatus.Synced, viewModel.syncStatus.value)
+        syncStatus.status.value = SyncStatus.WaitingForNetwork
+        assertEquals(SyncStatus.WaitingForNetwork, viewModel.syncStatus.value)
+        syncStatus.status.value = SyncStatus.Sending
+        assertEquals(SyncStatus.Sending, viewModel.syncStatus.value)
+
+        collector.cancel()
+    }
+
     private fun newViewModel(
         repository: FakeRepository,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
-    ) = LumiformHomeViewModel(LumiformTestUseCase(repository), LumiformNavigator(), savedStateHandle)
+        syncStatusRepository: SyncStatusRepository = FakeSyncStatusRepository(),
+    ) = LumiformHomeViewModel(
+        LumiformTestUseCase(repository),
+        LumiformNavigator(),
+        savedStateHandle,
+        syncStatusRepository,
+    )
+
+    private class FakeSyncStatusRepository : SyncStatusRepository {
+        val status = MutableStateFlow(SyncStatus.Synced)
+        override fun observeSyncStatus() = status
+    }
 
     private fun pagedViewModel(
         pageCount: Int,

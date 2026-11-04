@@ -17,4 +17,9 @@
     <string name="summary_no_answer">No answer</string>
     <string name="summary_submit">Submit</string>
     <string name="summary_submitted">Submitted</string>
+    <string name="sync_saved_on_device">Answers saved on this device</string>
+    <string name="sync_waiting_for_network">Offline. Answers will be sent when you\'re back online.</string>
+    <string name="sync_sending">Sending answers…</string>
+    <string name="sync_retrying">Couldn\'t send answers. Trying again…</string>
+    <string name="sync_synced">All answers sent</string>
 </resources>

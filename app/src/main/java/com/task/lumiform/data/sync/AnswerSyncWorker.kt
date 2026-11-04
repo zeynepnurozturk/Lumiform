@@ -15,6 +15,7 @@ import com.task.lumiform.domain.repository.LumiformTestRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
+import timber.log.Timber
 
 /**
  * Sends one page's unsynced answers. It only runs while there is a network connection, so answers queued
@@ -30,13 +31,13 @@ class AnswerSyncWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val pageId = inputData.getInt(KEY_PAGE_ID, NO_PAGE_ID)
         if (pageId == NO_PAGE_ID) return Result.failure()
-        println("[AnswerSync] page $pageId: attempt ${runAttemptCount + 1}")
+        Timber.tag("AnswerSync").d("page $pageId: attempt ${runAttemptCount + 1}")
 
         return if (repository.syncPageAnswers(pageId).isSuccessful()) {
-            println("[AnswerSync] page $pageId: sent")
+            Timber.tag("AnswerSync").d("page $pageId: sent")
             Result.success()
         } else {
-            println("[AnswerSync] page $pageId: send failed, will retry")
+            Timber.tag("AnswerSync").w("page $pageId: send failed, will retry")
             Result.retry()
         }
     }
@@ -58,7 +59,7 @@ class AnswerSyncWorker @AssistedInject constructor(
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
                 .build()
             workManager.enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
-            println("[AnswerSync] page $pageId: queued")
+            Timber.tag("AnswerSync").d("page $pageId: queued")
         }
     }
 }

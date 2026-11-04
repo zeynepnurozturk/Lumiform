@@ -19,6 +19,7 @@ import javax.inject.Inject
 import javax.inject.Provider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 class LumiformTestRepositoryImpl @Inject internal constructor(
     private val service: LumiformTestService,
@@ -51,7 +52,7 @@ class LumiformTestRepositoryImpl @Inject internal constructor(
         testCaseDao.replaceAll(pages.toRows())
         true
     } catch (e: SQLiteException) {
-        println("[PageDb] could not cache the response: ${e.message}")
+        Timber.tag("PageDb").w(e, "could not cache the response")
         false
     }
 
@@ -62,7 +63,7 @@ class LumiformTestRepositoryImpl @Inject internal constructor(
 
     override suspend fun saveAnswer(pageId: Int, questionId: Int, selectedResponseIds: List<Int>) {
         testCaseDao.saveSelection(pageId, questionId, selectedResponseIds, updatedAt = System.currentTimeMillis())
-        println("[PageDb] saved question $questionId on page $pageId: $selectedResponseIds")
+        Timber.tag("PageDb").d("saved question $questionId on page $pageId: $selectedResponseIds")
     }
 
     override fun queuePageForSync(pageId: Int) {
@@ -73,13 +74,13 @@ class LumiformTestRepositoryImpl @Inject internal constructor(
         val pageRow = testCaseDao.getPage(pageId)?.takeIf { !it.isSynced }
         val page = pageRow?.let { loadPages().firstOrNull { it.id == pageId } }
         if (pageRow == null || page == null) {
-            println("[AnswerSync] page $pageId: nothing to send")
+            Timber.tag("AnswerSync").d("page $pageId: nothing to send")
             return UseCaseResult.Success(Unit)
         }
         val result = service.submitAnswers(page.toSubmissionDto())
         if (result is NetworkResult.Success) {
             testCaseDao.markSynced(pageId, pageRow.updatedAt)
-            println("[PageDb] marked synced: page $pageId")
+            Timber.tag("PageDb").d("marked synced: page $pageId")
         }
         return result.toUseCaseResult(emptyObject = Unit) { }
     }
@@ -91,7 +92,7 @@ class LumiformTestRepositoryImpl @Inject internal constructor(
             if (result.isFailure()) return@withContext result
         }
         testCaseDao.clearAll()
-        println("[PageDb] submitted, cache cleared")
+        Timber.tag("PageDb").d("submitted, cache cleared")
         UseCaseResult.Success(Unit)
     }
 }

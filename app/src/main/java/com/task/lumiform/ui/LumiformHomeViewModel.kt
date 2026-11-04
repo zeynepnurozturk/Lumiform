@@ -5,6 +5,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.task.lumiform.R
+import com.task.lumiform.domain.model.SyncStatus
+import com.task.lumiform.domain.repository.SyncStatusRepository
 import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
@@ -17,8 +19,10 @@ import com.task.lumiform.ui.model.LumiformHomePageUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -38,6 +42,7 @@ class LumiformHomeViewModel @Inject constructor(
     private val lumiformTestUseCase: LumiformTestUseCase,
     private val navigator: LumiformNavigator,
     private val savedStateHandle: SavedStateHandle,
+    syncStatusRepository: SyncStatusRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LumiformHomeUiState>(LumiformHomeUiState.Loading)
@@ -49,6 +54,10 @@ class LumiformHomeViewModel @Inject constructor(
     // Selected response ids per choice question id. Restored from Room on load and saved on every tap.
     private val _selectedResponses = MutableStateFlow<Map<Int, List<Int>>>(emptyMap())
     val selectedResponses = _selectedResponses.asStateFlow()
+
+    // Where the saved answers are on their way to the server, shown at the top of the screen.
+    val syncStatus: StateFlow<SyncStatus> = syncStatusRepository.observeSyncStatus()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SyncStatus.Synced)
 
     // Index of the page on screen. Kept in SavedStateHandle so it survives process death.
     val currentPageIndex: StateFlow<Int> = savedStateHandle.getStateFlow(KEY_CURRENT_PAGE_INDEX, 0)
@@ -150,6 +159,7 @@ class LumiformHomeViewModel @Inject constructor(
 
     private companion object {
         const val KEY_CURRENT_PAGE_INDEX = "current_page_index"
+        const val STOP_TIMEOUT_MS = 5_000L
     }
 }
 

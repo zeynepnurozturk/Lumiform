@@ -26,10 +26,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.task.lumiform.R
+import com.task.lumiform.domain.model.SyncStatus
 import com.task.lumiform.ui.components.ChoiceComponent
 import com.task.lumiform.ui.components.ImageQuestionComponent
 import com.task.lumiform.ui.components.PageNavigationComponent
 import com.task.lumiform.ui.components.SectionComponent
+import com.task.lumiform.ui.components.SyncStatusComponent
 import com.task.lumiform.ui.components.TextComponent
 import com.task.lumiform.ui.components.TitleComponent
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel
@@ -46,6 +48,7 @@ fun LumiformHomeRoute(
     val lumiformTestResult by viewModel.lumiformTestResult.collectAsStateWithLifecycle()
     val selectedResponses by viewModel.selectedResponses.collectAsStateWithLifecycle()
     val currentPageIndex by viewModel.currentPageIndex.collectAsStateWithLifecycle()
+    val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
 
     LumiformHomeScreen(
         modifier = modifier,
@@ -54,6 +57,7 @@ fun LumiformHomeRoute(
         currentPageIndex = currentPageIndex,
         selectedResponses = selectedResponses,
         callbacks = viewModel.callbacks,
+        syncStatus = syncStatus,
     )
 }
 
@@ -65,6 +69,7 @@ fun LumiformHomeScreen(
     selectedResponses: Map<Int, List<Int>>,
     callbacks: LumiformHomeCallbacks,
     modifier: Modifier = Modifier,
+    syncStatus: SyncStatus = SyncStatus.Synced,
 ) {
     val pages = lumiformTestResult.orEmpty()
     val showPage = uiState == LumiformHomeUiState.Success
@@ -76,6 +81,9 @@ fun LumiformHomeScreen(
 
     Scaffold(
         modifier = modifier,
+        topBar = {
+            if (showPage) SyncStatusComponent(status = syncStatus)
+        },
         bottomBar = {
             if (showPage) {
                 PageNavigationComponent(

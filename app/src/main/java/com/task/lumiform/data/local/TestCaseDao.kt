@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 
 /**
  * All rows of the cached test case. Items are listed parents first, so they can be inserted in that order.
@@ -27,6 +28,10 @@ abstract class TestCaseDao {
 
     @Query("SELECT * FROM items WHERE id = :pageId AND type = 'PAGE'")
     abstract suspend fun getPage(pageId: Int): ItemEntity?
+
+    // Pages with answers that have not been sent yet. Emits again whenever the items table changes.
+    @Query("SELECT COUNT(*) FROM items WHERE type = 'PAGE' AND isSynced = 0")
+    abstract fun observeUnsyncedPageCount(): Flow<Int>
 
     @Query("SELECT * FROM responses WHERE selected = 1 ORDER BY position")
     abstract suspend fun getSelectedResponses(): List<ResponseEntity>

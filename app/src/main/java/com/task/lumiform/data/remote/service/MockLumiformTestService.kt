@@ -8,6 +8,7 @@ import com.task.lumiform.data.remote.mock.MockNetworkResponseProvider.ResponseTy
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
+import timber.log.Timber
 
 /**
  * Reads the bundled JSON from `assets/mock/` instead of calling the gist. It was used while the API response
@@ -30,11 +31,14 @@ class MockLumiformTestService @Inject constructor(
     }
 
     /**
-     * There is no submit endpoint yet, so this prints the request body instead of sending it.
+     * There is no submit endpoint yet, so this logs the request body instead of sending it.
      */
     override suspend fun submitAnswers(submission: AnswerSubmissionDto): NetworkResult<Unit> {
         delay(MOCK_NETWORK_DELAY_MS)
-        println("[AnswerSync] POST $SUBMIT_ANSWERS_PATH ${json.encodeToString(submission)}")
+        // Only debug builds plant a tree, so release builds skip encoding the body.
+        if (Timber.treeCount > 0) {
+            Timber.tag("AnswerSync").d("POST $SUBMIT_ANSWERS_PATH ${json.encodeToString(submission)}")
+        }
         return NetworkResult.Success(data = Unit, code = 200)
     }
 

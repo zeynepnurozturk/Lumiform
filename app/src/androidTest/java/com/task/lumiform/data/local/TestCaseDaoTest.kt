@@ -10,6 +10,7 @@ import com.task.lumiform.data.remote.dto.PageDto
 import com.task.lumiform.data.remote.dto.ResponseOptionDto
 import com.task.lumiform.data.remote.dto.ResponseSetDto
 import com.task.lumiform.data.remote.dto.SectionDto
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -138,6 +139,18 @@ class TestCaseDaoTest {
 
         dao.markSynced(pageId = 1, updatedAt = 1)
         assertTrue(dao.getPage(1)!!.isSynced)
+    }
+
+    @Test
+    fun unsyncedPageCountFollowsSavesAndSyncs() = runBlocking {
+        dao.replaceAll(listOf(choicePage()).toRows())
+        assertEquals(0, dao.observeUnsyncedPageCount().first())
+
+        dao.saveSelection(pageId = 1, questionId = 3, responseIds = listOf(5), updatedAt = 1)
+        assertEquals(1, dao.observeUnsyncedPageCount().first())
+
+        dao.markSynced(pageId = 1, updatedAt = 1)
+        assertEquals(0, dao.observeUnsyncedPageCount().first())
     }
 
     @Test
