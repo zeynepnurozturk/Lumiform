@@ -125,21 +125,6 @@ class LumiformHomeScreenTest {
     }
 
     @Test
-    fun networkErrorShowsAFriendlyMessageWithoutPageButtons() {
-        setScreen(uiState = LumiformHomeUiState.Error(LoadErrorType.Network), pages = null)
-
-        composeRule.onNodeWithText(string(R.string.error_network)).assertIsDisplayed()
-        composeRule.onNodeWithText(string(R.string.page_next)).assertDoesNotExist()
-    }
-
-    @Test
-    fun serverErrorShowsItsOwnMessage() {
-        setScreen(uiState = LumiformHomeUiState.Error(LoadErrorType.Server), pages = null)
-
-        composeRule.onNodeWithText(string(R.string.error_server)).assertIsDisplayed()
-    }
-
-    @Test
     fun noPagesShowsTheEmptyMessage() {
         setScreen(uiState = LumiformHomeUiState.Empty, pages = emptyList())
 

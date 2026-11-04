@@ -3,6 +3,7 @@ package com.task.lumiform.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.task.lumiform.R
 import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
@@ -12,6 +13,7 @@ import com.task.lumiform.ui.navigation.LumiformNavigator
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel.Choice.SelectionType
 import com.task.lumiform.ui.model.LumiformHomePageUiModel
+import com.task.lumiform.ui.toast.ToastManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,15 +28,13 @@ sealed interface LumiformHomeUiState {
     data object Loading : LumiformHomeUiState
     data object Success : LumiformHomeUiState
     data object Empty : LumiformHomeUiState
-    data class Error(val type: LoadErrorType) : LumiformHomeUiState
 }
-
-enum class LoadErrorType { Network, Server }
 
 @HiltViewModel
 class LumiformHomeViewModel @Inject constructor(
     private val lumiformTestUseCase: LumiformTestUseCase,
     private val navigator: LumiformNavigator,
+    private val toastManager: ToastManager,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -82,14 +82,15 @@ class LumiformHomeViewModel @Inject constructor(
                     _uiState.value =
                         if (pages.isEmpty()) LumiformHomeUiState.Empty else LumiformHomeUiState.Success
                 }
-                is UseCaseResult.Error -> _uiState.value = LumiformHomeUiState.Error(result.error.toLoadErrorType())
-                is UseCaseResult.Warning -> _uiState.value = LumiformHomeUiState.Error(LoadErrorType.Server)
+                // The screen stays as it is; the failure is only reported as a toast.
+                is UseCaseResult.Error -> toastManager.showToast(result.error.toMessageRes())
+                is UseCaseResult.Warning -> toastManager.showToast(R.string.error_server)
             }
         }
     }
 
-    private fun UseCaseError.toLoadErrorType() =
-        if (this is UseCaseError.NetworkError) LoadErrorType.Network else LoadErrorType.Server
+    private fun UseCaseError.toMessageRes() =
+        if (this is UseCaseError.NetworkError) R.string.error_network else R.string.error_server
 
     private fun onResponseClick(question: LumiformHomeItemUiModel.Choice, responseId: Int) {
         val pageId = currentPage()?.id ?: return

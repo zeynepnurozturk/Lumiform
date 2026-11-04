@@ -1,6 +1,7 @@
 package com.task.lumiform.ui
 
 import androidx.lifecycle.SavedStateHandle
+import com.task.lumiform.R
 import com.task.lumiform.domain.model.ChoiceQuestionDomainModel
 import com.task.lumiform.domain.model.PageDomainModel
 import com.task.lumiform.domain.model.ResponseOptionDomainModel
@@ -13,9 +14,12 @@ import com.task.lumiform.domain.usecase.UseCaseResult
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel
 import com.task.lumiform.ui.model.LumiformHomePageUiModel
 import com.task.lumiform.ui.navigation.LumiformNavigator
+import com.task.lumiform.ui.toast.ToastManager
+import com.task.lumiform.ui.toast.ToastMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -100,24 +104,28 @@ class LumiformHomeViewModelTest {
     }
 
     @Test
-    fun `network error exposes Network error state`() = runTest {
+    fun `network error shows the network toast and keeps the state`() = runTest {
         val repository = FakeRepository()
-        val viewModel = newViewModel(repository)
+        val toastManager = ToastManager()
+        val viewModel = newViewModel(repository, toastManager = toastManager)
 
         repository.result.complete(UseCaseResult.Error(UseCaseError.NetworkError("boom")))
 
-        assertEquals(LumiformHomeUiState.Error(LoadErrorType.Network), viewModel.uiState.value)
+        assertEquals(ToastMessage.Resource(R.string.error_network), toastManager.messages.first())
+        assertEquals(LumiformHomeUiState.Loading, viewModel.uiState.value)
         assertNull(viewModel.lumiformTestResult.value)
     }
 
     @Test
-    fun `any other error exposes Server error state`() = runTest {
+    fun `any other error shows the server toast and keeps the state`() = runTest {
         val repository = FakeRepository()
-        val viewModel = newViewModel(repository)
+        val toastManager = ToastManager()
+        val viewModel = newViewModel(repository, toastManager = toastManager)
 
         repository.result.complete(UseCaseResult.Error(UseCaseError.ApiError(code = 500, message = "Server error")))
 
-        assertEquals(LumiformHomeUiState.Error(LoadErrorType.Server), viewModel.uiState.value)
+        assertEquals(ToastMessage.Resource(R.string.error_server), toastManager.messages.first())
+        assertEquals(LumiformHomeUiState.Loading, viewModel.uiState.value)
     }
 
     @Test
@@ -236,7 +244,8 @@ class LumiformHomeViewModelTest {
     private fun newViewModel(
         repository: FakeRepository,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
-    ) = LumiformHomeViewModel(LumiformTestUseCase(repository), LumiformNavigator(), savedStateHandle)
+        toastManager: ToastManager = ToastManager(),
+    ) = LumiformHomeViewModel(LumiformTestUseCase(repository), LumiformNavigator(), toastManager, savedStateHandle)
 
     private fun pagedViewModel(
         pageCount: Int,

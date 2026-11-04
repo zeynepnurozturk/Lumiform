@@ -93,7 +93,6 @@ fun LumiformHomeScreen(
         ) {
             when (uiState) {
                 LumiformHomeUiState.Loading -> CircularProgressIndicator()
-                is LumiformHomeUiState.Error -> LoadErrorContent(type = uiState.type)
                 LumiformHomeUiState.Empty -> EmptyPageContent(message = stringResource(R.string.pages_empty))
                 LumiformHomeUiState.Success -> {
                     val currentPage = pages[currentPageIndex]
@@ -138,26 +137,6 @@ private fun LumiformPageContent(
             )
         }
     }
-}
-
-/**
- * Shown when loading failed after all retries and nothing was cached yet.
- */
-@Composable
-private fun LoadErrorContent(
-    type: LoadErrorType,
-    modifier: Modifier = Modifier,
-) {
-    val message = when (type) {
-        LoadErrorType.Network -> R.string.error_network
-        LoadErrorType.Server -> R.string.error_server
-    }
-    TextComponent(
-        text = stringResource(message),
-        style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-        color = MaterialTheme.colorScheme.error,
-        modifier = modifier.padding(16.dp)
-    )
 }
 
 /**

@@ -103,12 +103,6 @@ fun LumiformSummaryScreen(
         ) {
             when (uiState) {
                 LumiformSummaryUiState.Loading -> CircularProgressIndicator()
-                is LumiformSummaryUiState.Error -> TextComponent(
-                    text = uiState.message,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(16.dp)
-                )
                 LumiformSummaryUiState.Success -> SummaryContent(pages = summaryPages)
             }
         }

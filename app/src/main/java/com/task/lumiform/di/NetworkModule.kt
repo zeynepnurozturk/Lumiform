@@ -72,6 +72,6 @@ abstract class NetworkModule {
 
         private const val CONNECT_TIMEOUT_SECONDS = 10L
         private const val READ_TIMEOUT_SECONDS = 10L
-        private const val CALL_TIMEOUT_SECONDS = 15L
+        private const val CALL_TIMEOUT_SECONDS = 5L
     }
 }

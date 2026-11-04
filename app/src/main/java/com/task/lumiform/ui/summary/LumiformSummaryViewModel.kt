@@ -6,6 +6,7 @@ import com.task.lumiform.domain.usecase.LumiformTestUseCase
 import com.task.lumiform.domain.usecase.UseCaseResult
 import com.task.lumiform.ui.mapper.toSummaryPages
 import com.task.lumiform.ui.navigation.LumiformNavigator
+import com.task.lumiform.ui.toast.ToastManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,13 +17,13 @@ import kotlinx.coroutines.launch
 sealed interface LumiformSummaryUiState {
     data object Loading : LumiformSummaryUiState
     data object Success : LumiformSummaryUiState
-    data class Error(val message: String) : LumiformSummaryUiState
 }
 
 @HiltViewModel
 class LumiformSummaryViewModel @Inject constructor(
     private val lumiformTestUseCase: LumiformTestUseCase,
     private val navigator: LumiformNavigator,
+    private val toastManager: ToastManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LumiformSummaryUiState>(LumiformSummaryUiState.Loading)
@@ -56,8 +57,9 @@ class LumiformSummaryViewModel @Inject constructor(
                     _summaryPages.value = pages
                     _uiState.value = LumiformSummaryUiState.Success
                 }
-                is UseCaseResult.Error -> _uiState.value = LumiformSummaryUiState.Error(result.message)
-                is UseCaseResult.Warning -> _uiState.value = LumiformSummaryUiState.Error(result.message)
+                // The screen stays as it is; the failure is only reported as a toast.
+                is UseCaseResult.Error -> toastManager.showToast(result.message)
+                is UseCaseResult.Warning -> toastManager.showToast(result.message)
             }
         }
     }

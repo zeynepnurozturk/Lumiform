@@ -42,10 +42,10 @@ There is no submit endpoint, so syncing is simulated. Each tap is saved to Room 
 ## Tests
 - **Unit (JVM):** DTO parsing, entity mappers, the retry policy in the service, the repository (cache fallback, keeping selections, sync), the home and summary ViewModels (selection rules, paging, saving, restoring), the UI mappers and the navigator.
 - **Instrumented:** The Room DAO, `AnswerSyncWorker` (success, retry, failure, ordered queue), and the image ViewModel's route arguments.
-- **Compose UI:** Font sizes decrease down the hierarchy; text, image title and image tap; radio vs checkbox roles and the saved selection; Previous/Next/Finish; error and empty states; the full-image screen.
+- **Compose UI:** Font sizes decrease down the hierarchy; text, image title and image tap; radio vs checkbox roles and the saved selection; Previous/Next/Finish; the empty state; the full-image screen.
 
 ## Known Limitations
-- The error screen has no Retry button, and there's no banner when cached data is shown offline.
+- Load failures are shown only as a toast (via `ToastManager`); the screen stays where it was and there is no Retry button. There is no banner when cached data is shown offline.
 - An unknown item `type` fails the whole parse. It is reported as a network error, so the user sees the connection message.
 - Answer submission is simulated, since there is no endpoint.
 - Logging uses `println` instead of a logging library.

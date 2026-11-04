@@ -10,6 +10,8 @@ import com.task.lumiform.domain.usecase.UseCaseError
 import com.task.lumiform.domain.usecase.UseCaseResult
 import com.task.lumiform.ui.navigation.LumiformNavigator
 import com.task.lumiform.ui.navigation.NavigationCommand
+import com.task.lumiform.ui.toast.ToastManager
+import com.task.lumiform.ui.toast.ToastMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -67,23 +69,27 @@ class LumiformSummaryViewModelTest {
     }
 
     @Test
-    fun `error shows its message`() = runTest {
+    fun `error shows its message as a toast and keeps the state`() = runTest {
         val repository = FakeRepository()
-        val viewModel = newViewModel(repository)
+        val toastManager = ToastManager()
+        val viewModel = newViewModel(repository, toastManager = toastManager)
 
         repository.result.complete(UseCaseResult.Error(UseCaseError.NetworkError("No connection")))
 
-        assertEquals(LumiformSummaryUiState.Error("No connection"), viewModel.uiState.value)
+        assertEquals(ToastMessage.Text("No connection"), toastManager.messages.first())
+        assertEquals(LumiformSummaryUiState.Loading, viewModel.uiState.value)
     }
 
     @Test
-    fun `warning shows its message`() = runTest {
+    fun `warning shows its message as a toast and keeps the state`() = runTest {
         val repository = FakeRepository()
-        val viewModel = newViewModel(repository)
+        val toastManager = ToastManager()
+        val viewModel = newViewModel(repository, toastManager = toastManager)
 
         repository.result.complete(UseCaseResult.Warning("Empty"))
 
-        assertEquals(LumiformSummaryUiState.Error("Empty"), viewModel.uiState.value)
+        assertEquals(ToastMessage.Text("Empty"), toastManager.messages.first())
+        assertEquals(LumiformSummaryUiState.Loading, viewModel.uiState.value)
     }
 
     @Test
@@ -122,8 +128,11 @@ class LumiformSummaryViewModelTest {
         assertEquals(NavigationCommand.Back, navigator.commands.first())
     }
 
-    private fun newViewModel(repository: FakeRepository, navigator: LumiformNavigator = LumiformNavigator()) =
-        LumiformSummaryViewModel(LumiformTestUseCase(repository), navigator)
+    private fun newViewModel(
+        repository: FakeRepository,
+        navigator: LumiformNavigator = LumiformNavigator(),
+        toastManager: ToastManager = ToastManager(),
+    ) = LumiformSummaryViewModel(LumiformTestUseCase(repository), navigator, toastManager)
 
     private fun choicePage(id: Int) = PageDomainModel(
         id = id,
