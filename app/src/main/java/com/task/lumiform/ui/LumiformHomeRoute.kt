@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,7 +24,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.task.lumiform.R
 import com.task.lumiform.ui.components.ChoiceComponent
-import com.task.lumiform.ui.components.ImageComponent
+import com.task.lumiform.ui.components.ImageQuestionComponent
 import com.task.lumiform.ui.components.PageNavigationComponent
 import com.task.lumiform.ui.components.SectionComponent
 import com.task.lumiform.ui.components.TextComponent
@@ -201,10 +200,10 @@ private fun LumiformHomeItem(
             text = item.content,
             style = MaterialTheme.typography.bodySmall
         )
-        is LumiformHomeItemUiModel.Image -> ImageComponent(
+        is LumiformHomeItemUiModel.Image -> ImageQuestionComponent(
             src = item.src,
             title = item.title,
-            modifier = Modifier.size(ThumbnailSize),
+            thumbnailSize = ThumbnailSize,
             onClick = { callbacks.onImageClick(item.src, item.title) }
         )
         is LumiformHomeItemUiModel.Choice -> ChoiceComponent(

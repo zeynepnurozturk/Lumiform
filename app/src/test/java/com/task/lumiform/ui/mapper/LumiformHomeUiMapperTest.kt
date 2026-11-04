@@ -3,6 +3,7 @@ package com.task.lumiform.ui.mapper
 import com.task.lumiform.domain.model.ChoiceQuestionDomainModel
 import com.task.lumiform.domain.model.ImageQuestionDomainModel
 import com.task.lumiform.domain.model.PageDomainModel
+import com.task.lumiform.domain.model.ResponseOptionDomainModel
 import com.task.lumiform.domain.model.ResponseSetDomainModel
 import com.task.lumiform.domain.model.SectionDomainModel
 import com.task.lumiform.domain.model.TextQuestionDomainModel
@@ -84,5 +85,44 @@ class LumiformHomeUiMapperTest {
             ),
             result
         )
+    }
+
+    @Test
+    fun `choice responses are kept in their order`() {
+        val responses = listOf(
+            ResponseOptionDomainModel(id = 1, label = "Yes", score = 1),
+            ResponseOptionDomainModel(id = 2, label = "No", score = 0)
+        )
+        val pages = listOf(
+            PageDomainModel(
+                id = 1,
+                items = listOf(
+                    ChoiceQuestionDomainModel(
+                        id = 2,
+                        content = "Pick",
+                        responseSet = ResponseSetDomainModel(id = 3, responses = responses)
+                    )
+                )
+            )
+        )
+
+        val choice = pages.toHomePages().single().items.single() as LumiformHomeItemUiModel.Choice
+
+        assertEquals(responses, choice.responses)
+    }
+
+    @Test
+    fun `pages keep their order and an empty page has no items`() {
+        val pages = listOf(PageDomainModel(id = 2, title = "Second"), PageDomainModel(id = 1, title = "First"))
+
+        val result = pages.toHomePages()
+
+        assertEquals(listOf(2, 1), result.map { it.id })
+        assertEquals(emptyList<LumiformHomeItemUiModel>(), result.first().items)
+    }
+
+    @Test
+    fun `no pages map to no pages`() {
+        assertEquals(emptyList<LumiformHomePageUiModel>(), emptyList<PageDomainModel>().toHomePages())
     }
 }
