@@ -46,6 +46,7 @@ class LumiformHomeScreenTest {
         onNextClick = { calls += "next" },
         onFinishClick = { calls += "finish" },
         onImageClick = { src, title -> calls += "image $src $title" },
+        onRetryClick = { calls += "retry" },
     )
 
     @Test
@@ -129,6 +130,16 @@ class LumiformHomeScreenTest {
         setScreen(uiState = LumiformHomeUiState.Empty, pages = emptyList())
 
         composeRule.onNodeWithText(string(R.string.pages_empty)).assertIsDisplayed()
+    }
+
+    @Test
+    fun errorShowsTheMessageAndRetryReportsTheTap() {
+        setScreen(uiState = LumiformHomeUiState.Error(R.string.error_network), pages = null)
+
+        composeRule.onNodeWithText(string(R.string.error_network)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.retry)).performClick()
+
+        assertEquals(listOf("retry"), calls)
     }
 
     private fun setScreen(

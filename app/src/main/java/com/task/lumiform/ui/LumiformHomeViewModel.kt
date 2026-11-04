@@ -1,5 +1,6 @@
 package com.task.lumiform.ui
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,7 +14,6 @@ import com.task.lumiform.ui.navigation.LumiformNavigator
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel.Choice.SelectionType
 import com.task.lumiform.ui.model.LumiformHomePageUiModel
-import com.task.lumiform.ui.toast.ToastManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,13 +28,15 @@ sealed interface LumiformHomeUiState {
     data object Loading : LumiformHomeUiState
     data object Success : LumiformHomeUiState
     data object Empty : LumiformHomeUiState
+
+    // Only reached when the request failed and Room has no cached pages; otherwise the cached pages are shown.
+    data class Error(@StringRes val messageRes: Int) : LumiformHomeUiState
 }
 
 @HiltViewModel
 class LumiformHomeViewModel @Inject constructor(
     private val lumiformTestUseCase: LumiformTestUseCase,
     private val navigator: LumiformNavigator,
-    private val toastManager: ToastManager,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -61,6 +63,7 @@ class LumiformHomeViewModel @Inject constructor(
             onNextClick = ::onNextClick,
             onFinishClick = ::onFinishClick,
             onImageClick = ::onImageClick,
+            onRetryClick = ::loadTestCase,
         )
     }
 
@@ -82,9 +85,10 @@ class LumiformHomeViewModel @Inject constructor(
                     _uiState.value =
                         if (pages.isEmpty()) LumiformHomeUiState.Empty else LumiformHomeUiState.Success
                 }
-                // The screen stays as it is; the failure is only reported as a toast.
-                is UseCaseResult.Error -> toastManager.showToast(result.error.toMessageRes())
-                is UseCaseResult.Warning -> toastManager.showToast(R.string.error_server)
+                // The repository falls back to the pages cached in Room, so an error here means there is nothing
+                // to show. The screen shows the message with a Retry button.
+                is UseCaseResult.Error -> _uiState.value = LumiformHomeUiState.Error(result.error.toMessageRes())
+                is UseCaseResult.Warning -> _uiState.value = LumiformHomeUiState.Error(R.string.error_server)
             }
         }
     }
@@ -155,4 +159,5 @@ data class LumiformHomeCallbacks(
     val onNextClick: () -> Unit,
     val onFinishClick: () -> Unit,
     val onImageClick: (src: String, title: String) -> Unit,
+    val onRetryClick: () -> Unit,
 )

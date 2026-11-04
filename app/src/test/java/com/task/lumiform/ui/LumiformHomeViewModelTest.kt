@@ -14,12 +14,9 @@ import com.task.lumiform.domain.usecase.UseCaseResult
 import com.task.lumiform.ui.model.LumiformHomeItemUiModel
 import com.task.lumiform.ui.model.LumiformHomePageUiModel
 import com.task.lumiform.ui.navigation.LumiformNavigator
-import com.task.lumiform.ui.toast.ToastManager
-import com.task.lumiform.ui.toast.ToastMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -104,28 +101,63 @@ class LumiformHomeViewModelTest {
     }
 
     @Test
-    fun `network error shows the network toast and keeps the state`() = runTest {
+    fun `network error with nothing cached shows the network error state`() = runTest {
         val repository = FakeRepository()
-        val toastManager = ToastManager()
-        val viewModel = newViewModel(repository, toastManager = toastManager)
+        val viewModel = newViewModel(repository)
 
         repository.result.complete(UseCaseResult.Error(UseCaseError.NetworkError("boom")))
 
-        assertEquals(ToastMessage.Resource(R.string.error_network), toastManager.messages.first())
-        assertEquals(LumiformHomeUiState.Loading, viewModel.uiState.value)
+        assertEquals(LumiformHomeUiState.Error(R.string.error_network), viewModel.uiState.value)
         assertNull(viewModel.lumiformTestResult.value)
     }
 
     @Test
-    fun `any other error shows the server toast and keeps the state`() = runTest {
+    fun `any other error shows the server error state`() = runTest {
         val repository = FakeRepository()
-        val toastManager = ToastManager()
-        val viewModel = newViewModel(repository, toastManager = toastManager)
+        val viewModel = newViewModel(repository)
 
         repository.result.complete(UseCaseResult.Error(UseCaseError.ApiError(code = 500, message = "Server error")))
 
-        assertEquals(ToastMessage.Resource(R.string.error_server), toastManager.messages.first())
+        assertEquals(LumiformHomeUiState.Error(R.string.error_server), viewModel.uiState.value)
+    }
+
+    @Test
+    fun `warning shows the server error state`() = runTest {
+        val repository = FakeRepository()
+        val viewModel = newViewModel(repository)
+
+        repository.result.complete(UseCaseResult.Warning("odd response"))
+
+        assertEquals(LumiformHomeUiState.Error(R.string.error_server), viewModel.uiState.value)
+    }
+
+    @Test
+    fun `retry shows Loading and then the pages when the next load succeeds`() = runTest {
+        val repository = FakeRepository()
+        val viewModel = newViewModel(repository)
+        repository.result.complete(UseCaseResult.Error(UseCaseError.NetworkError("boom")))
+        repository.result = CompletableDeferred()
+
+        viewModel.callbacks.onRetryClick()
         assertEquals(LumiformHomeUiState.Loading, viewModel.uiState.value)
+        val pages = listOf(PageDomainModel(id = 1, title = "Main Page"))
+        repository.result.complete(UseCaseResult.Success(LumiformTestUseCase.Result(pages)))
+
+        assertEquals(LumiformHomeUiState.Success, viewModel.uiState.value)
+        assertEquals(1, viewModel.lumiformTestResult.value?.size)
+    }
+
+    @Test
+    fun `retry that fails again stays on the error state`() = runTest {
+        val repository = FakeRepository()
+        val viewModel = newViewModel(repository)
+        repository.result.complete(UseCaseResult.Error(UseCaseError.NetworkError("boom")))
+        repository.result = CompletableDeferred()
+
+        viewModel.callbacks.onRetryClick()
+        repository.result.complete(UseCaseResult.Error(UseCaseError.NetworkError("still offline")))
+
+        assertEquals(LumiformHomeUiState.Error(R.string.error_network), viewModel.uiState.value)
     }
 
     @Test
@@ -244,8 +276,7 @@ class LumiformHomeViewModelTest {
     private fun newViewModel(
         repository: FakeRepository,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
-        toastManager: ToastManager = ToastManager(),
-    ) = LumiformHomeViewModel(LumiformTestUseCase(repository), LumiformNavigator(), toastManager, savedStateHandle)
+    ) = LumiformHomeViewModel(LumiformTestUseCase(repository), LumiformNavigator(), savedStateHandle)
 
     private fun pagedViewModel(
         pageCount: Int,
@@ -294,7 +325,8 @@ class LumiformHomeViewModelTest {
     }
 
     private class FakeRepository : LumiformTestRepository {
-        val result = CompletableDeferred<UseCaseResult<LumiformTestUseCase.Result>>()
+        // Replace with a new deferred before a retry to give the next load its own result.
+        var result = CompletableDeferred<UseCaseResult<LumiformTestUseCase.Result>>()
         val savedAnswers = mutableMapOf<Int, List<Int>>()
         val savedPageIds = mutableMapOf<Int, Int>()
         val queuedPageIds = mutableListOf<Int>()

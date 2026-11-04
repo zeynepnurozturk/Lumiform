@@ -31,7 +31,7 @@ Single-activity Compose app with Hilt, split into `data`, `domain` and `ui`.
 - Storing the tree as rows lets an answer change a single `selected` column instead of rewriting the whole document. It also lets a new fetch replace the form in one transaction while keeping existing selections.
 
 ## Offline & Poor Connections
-- **Network first:** A successful response replaces the cache. If the request fails, the cached form is shown, and the error only appears when nothing has been cached yet.
+- **Network first:** A successful response replaces the cache. If the request fails, the cached form is shown, and the error only appears when nothing has been cached yet. In that case the screen shows the message with a Retry button instead of an endless spinner.
 - **Retries:** Up to 3 attempts with increasing delays, only for lost connections, timeouts and 5xx responses. Each attempt is limited by OkHttp connect/read/call timeouts.
 - **Friendly errors:** Different messages for network and server failures, never the raw exception text.
 - **Images:** Coil's disk cache keeps images that have been seen. An image that was never loaded shows a broken-image icon instead of an empty box.
@@ -42,10 +42,10 @@ There is no submit endpoint, so syncing is simulated. Each tap is saved to Room 
 ## Tests
 - **Unit (JVM):** DTO parsing, entity mappers, the retry policy in the service, the repository (cache fallback, keeping selections, sync), the home and summary ViewModels (selection rules, paging, saving, restoring), the UI mappers and the navigator.
 - **Instrumented:** The Room DAO, `AnswerSyncWorker` (success, retry, failure, ordered queue), and the image ViewModel's route arguments.
-- **Compose UI:** Font sizes decrease down the hierarchy; text, image title and image tap; radio vs checkbox roles and the saved selection; Previous/Next/Finish; the empty state; the full-image screen.
+- **Compose UI:** Font sizes decrease down the hierarchy; text, image title and image tap; radio vs checkbox roles and the saved selection; Previous/Next/Finish; the empty state; the error state and its Retry button; the full-image screen.
 
 ## Known Limitations
-- Load failures are shown only as a toast (via `ToastManager`); the screen stays where it was and there is no Retry button. There is no banner when cached data is shown offline.
+- When a load fails but pages are cached in Room, the cached pages are shown with no banner saying they may be out of date.
 - An unknown item `type` fails the whole parse. It is reported as a network error, so the user sees the connection message.
 - Answer submission is simulated, since there is no endpoint.
 - Logging uses `println` instead of a logging library.

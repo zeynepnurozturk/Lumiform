@@ -3,15 +3,18 @@ package com.task.lumiform.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -94,6 +97,10 @@ fun LumiformHomeScreen(
             when (uiState) {
                 LumiformHomeUiState.Loading -> CircularProgressIndicator()
                 LumiformHomeUiState.Empty -> EmptyPageContent(message = stringResource(R.string.pages_empty))
+                is LumiformHomeUiState.Error -> ErrorContent(
+                    message = stringResource(uiState.messageRes),
+                    onRetryClick = callbacks.onRetryClick,
+                )
                 LumiformHomeUiState.Success -> {
                     val currentPage = pages[currentPageIndex]
                     key(currentPage.id) {
@@ -153,6 +160,27 @@ private fun EmptyPageContent(
             style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+/**
+ * Shown when the first load fails and nothing is cached yet. Retry runs the load again.
+ */
+@Composable
+private fun ErrorContent(
+    message: String,
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        EmptyPageContent(message = message)
+        Button(onClick = onRetryClick) {
+            Text(text = stringResource(R.string.retry))
+        }
     }
 }
 

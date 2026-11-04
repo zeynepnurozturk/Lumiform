@@ -12,6 +12,7 @@
     <string name="pages_empty">There are no pages to show.</string>
     <string name="error_network">Couldn\'t reach the server. Check your connection.</string>
     <string name="error_server">Something went wrong while loading the form.</string>
+    <string name="retry">Retry</string>
     <string name="summary_title">Summary</string>
     <string name="summary_no_answer">No answer</string>
     <string name="summary_submit">Submit</string>
