@@ -52,8 +52,8 @@ class LumiformSummaryViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = lumiformTestUseCase()) {
                 is UseCaseResult.Success -> {
-                    pageIds = result.result.model.map { it.id }
-                    val pages = result.result.model.toSummaryPages(lumiformTestUseCase.getAnswers())
+                    pageIds = result.result.pages.map { it.id }
+                    val pages = result.result.pages.toSummaryPages(lumiformTestUseCase.getAnswers())
                     _summaryPages.value = pages
                     _uiState.value = LumiformSummaryUiState.Success
                 }

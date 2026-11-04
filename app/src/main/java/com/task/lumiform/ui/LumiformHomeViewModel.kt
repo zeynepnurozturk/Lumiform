@@ -33,7 +33,6 @@ sealed interface LumiformHomeUiState {
     data object Success : LumiformHomeUiState
     data object Empty : LumiformHomeUiState
 
-    // Only reached when the request failed and Room has no cached pages; otherwise the cached pages are shown.
     data class Error(@StringRes val messageRes: Int) : LumiformHomeUiState
 }
 
@@ -48,8 +47,8 @@ class LumiformHomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<LumiformHomeUiState>(LumiformHomeUiState.Loading)
     val uiState: StateFlow<LumiformHomeUiState> = _uiState.asStateFlow()
 
-    private val _lumiformTestResult: MutableStateFlow<List<LumiformHomePageUiModel>?> = MutableStateFlow(null)
-    val lumiformTestResult = _lumiformTestResult.asStateFlow()
+    private val _pages: MutableStateFlow<List<LumiformHomePageUiModel>?> = MutableStateFlow(null)
+    val pages = _pages.asStateFlow()
 
     // Selected response ids per choice question id. Restored from Room on load and saved on every tap.
     private val _selectedResponses = MutableStateFlow<Map<Int, List<Int>>>(emptyMap())
@@ -85,17 +84,15 @@ class LumiformHomeViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = lumiformTestUseCase()) {
                 is UseCaseResult.Success -> {
-                    val pages = result.result.model.toHomePages()
+                    val homePages = result.result.pages.toHomePages()
                     _selectedResponses.value = lumiformTestUseCase.getAnswers()
-                    _lumiformTestResult.value = pages
+                    _pages.value = homePages
                     // A restored index can point past the end if the API now returns fewer pages.
                     savedStateHandle[KEY_CURRENT_PAGE_INDEX] =
-                        currentPageIndex.value.coerceAtMost(pages.lastIndex).coerceAtLeast(0)
+                        currentPageIndex.value.coerceAtMost(homePages.lastIndex).coerceAtLeast(0)
                     _uiState.value =
-                        if (pages.isEmpty()) LumiformHomeUiState.Empty else LumiformHomeUiState.Success
+                        if (homePages.isEmpty()) LumiformHomeUiState.Empty else LumiformHomeUiState.Success
                 }
-                // The repository falls back to the pages cached in Room, so an error here means there is nothing
-                // to show. The screen shows the message with a Retry button.
                 is UseCaseResult.Error -> _uiState.value = LumiformHomeUiState.Error(result.error.toMessageRes())
                 is UseCaseResult.Warning -> _uiState.value = LumiformHomeUiState.Error(R.string.error_server)
             }
@@ -107,19 +104,19 @@ class LumiformHomeViewModel @Inject constructor(
 
     private fun onResponseClick(question: LumiformHomeItemUiModel.Choice, responseId: Int) {
         val pageId = currentPage()?.id ?: return
-        val selections = _selectedResponses.updateAndGet { selections ->
-            val selected = selections[question.id].orEmpty()
+        val updated = _selectedResponses.updateAndGet { current ->
+            val previous = current[question.id].orEmpty()
             val newSelected = when {
                 question.selectionType == SelectionType.Single -> listOf(responseId)
-                responseId in selected -> selected - responseId
-                else -> selected + responseId
+                responseId in previous -> previous - responseId
+                else -> previous + responseId
             }
-            selections + (question.id to newSelected)
+            current + (question.id to newSelected)
         }
-        val selected = selections[question.id].orEmpty()
+        val selectedIds = updated[question.id].orEmpty()
         viewModelScope.launch {
             saveMutex.withLock {
-                lumiformTestUseCase.saveAnswer(pageId, question.id, selected)
+                lumiformTestUseCase.saveAnswer(pageId, question.id, selectedIds)
             }
         }
     }
@@ -132,7 +129,7 @@ class LumiformHomeViewModel @Inject constructor(
     private fun onNextClick() {
         queueCurrentPageForSync()
         val index = currentPageIndex.value
-        if (index < _lumiformTestResult.value.orEmpty().lastIndex) {
+        if (index < _pages.value.orEmpty().lastIndex) {
             savedStateHandle[KEY_CURRENT_PAGE_INDEX] = index + 1
         }
     }
@@ -155,7 +152,7 @@ class LumiformHomeViewModel @Inject constructor(
     }
 
     private fun currentPage(): LumiformHomePageUiModel? =
-        _lumiformTestResult.value?.getOrNull(currentPageIndex.value)
+        _pages.value?.getOrNull(currentPageIndex.value)
 
     private companion object {
         const val KEY_CURRENT_PAGE_INDEX = "current_page_index"

@@ -20,5 +20,5 @@ open class LumiformTestUseCase @Inject constructor(
 
     open suspend fun submitAll(): UseCaseResult<Unit> = repository.submitAll()
 
-    data class Result(val model: List<PageDomainModel>)
+    data class Result(val pages:List<PageDomainModel>)
 }

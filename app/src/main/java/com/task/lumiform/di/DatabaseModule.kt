@@ -21,7 +21,6 @@ object DatabaseModule {
     fun provideLumiformDatabase(
         @ApplicationContext context: Context
     ): LumiformDatabase = Room.databaseBuilder(context, LumiformDatabase::class.java, LumiformDatabase.DATABASE_NAME)
-        // Earlier builds stored pages as JSON in schema version 3. It is only a cache, so that file is dropped.
         .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
         .build()
 

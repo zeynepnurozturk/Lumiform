@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import timber.log.Timber
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Reads the bundled JSON from `assets/mock/` instead of calling the gist. It was used while the API response
@@ -22,7 +23,7 @@ class MockLumiformTestService @Inject constructor(
     @Suppress("TooGenericExceptionCaught")
     override suspend fun getTestCase(): NetworkResult<List<PageDto>> {
         return try {
-            delay(MOCK_NETWORK_DELAY_MS)
+            delay(2.seconds)
             val response = mockNetworkResponseProvider.getApiResponse<List<PageDto>>(ResponseType.LUMIFORM_TEST_CASE)
             NetworkResult.Success(data = response, code = 200)
         } catch (e: Exception) {
@@ -34,7 +35,7 @@ class MockLumiformTestService @Inject constructor(
      * There is no submit endpoint yet, so this logs the request body instead of sending it.
      */
     override suspend fun submitAnswers(submission: AnswerSubmissionDto): NetworkResult<Unit> {
-        delay(MOCK_NETWORK_DELAY_MS)
+        delay(2.seconds)
         // Only debug builds plant a tree, so release builds skip encoding the body.
         if (Timber.treeCount > 0) {
             Timber.tag("AnswerSync").d("POST $SUBMIT_ANSWERS_PATH ${json.encodeToString(submission)}")
@@ -43,7 +44,6 @@ class MockLumiformTestService @Inject constructor(
     }
 
     private companion object {
-        const val MOCK_NETWORK_DELAY_MS = 2_000L
         const val SUBMIT_ANSWERS_PATH = "/answers"
     }
 }

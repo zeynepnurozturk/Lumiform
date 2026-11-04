@@ -32,8 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.task.lumiform.R
 import com.task.lumiform.domain.model.SyncStatus
 import kotlinx.coroutines.delay
-
-private const val SYNCED_VISIBLE_MS = 3_000L
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * A strip at the top of the screen telling the user whether their answers are saved, waiting or sent.
@@ -51,7 +50,7 @@ fun SyncStatusComponent(
         if (status != SyncStatus.Synced) {
             showSynced = true
         } else if (showSynced) {
-            delay(SYNCED_VISIBLE_MS)
+            delay(3.seconds)
             showSynced = false
         }
     }

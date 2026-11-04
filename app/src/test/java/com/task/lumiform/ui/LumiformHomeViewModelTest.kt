@@ -51,7 +51,7 @@ class LumiformHomeViewModelTest {
         val viewModel = newViewModel(repository)
 
         assertEquals(LumiformHomeUiState.Loading, viewModel.uiState.value)
-        assertNull(viewModel.lumiformTestResult.value)
+        assertNull(viewModel.pages.value)
     }
 
     @Test
@@ -65,7 +65,7 @@ class LumiformHomeViewModelTest {
         assertEquals(LumiformHomeUiState.Success, viewModel.uiState.value)
         assertEquals(
             listOf(LumiformHomePageUiModel(id = 1, title = "Main Page", items = emptyList())),
-            viewModel.lumiformTestResult.value
+            viewModel.pages.value
         )
     }
 
@@ -112,7 +112,7 @@ class LumiformHomeViewModelTest {
         repository.result.complete(UseCaseResult.Error(UseCaseError.NetworkError("boom")))
 
         assertEquals(LumiformHomeUiState.Error(R.string.error_network), viewModel.uiState.value)
-        assertNull(viewModel.lumiformTestResult.value)
+        assertNull(viewModel.pages.value)
     }
 
     @Test
@@ -148,7 +148,7 @@ class LumiformHomeViewModelTest {
         repository.result.complete(UseCaseResult.Success(LumiformTestUseCase.Result(pages)))
 
         assertEquals(LumiformHomeUiState.Success, viewModel.uiState.value)
-        assertEquals(1, viewModel.lumiformTestResult.value?.size)
+        assertEquals(1, viewModel.pages.value?.size)
     }
 
     @Test
@@ -230,7 +230,7 @@ class LumiformHomeViewModelTest {
         viewModel.callbacks.onNextClick()
 
         assertEquals(LumiformHomeUiState.Empty, viewModel.uiState.value)
-        assertEquals(emptyList<LumiformHomePageUiModel>(), viewModel.lumiformTestResult.value)
+        assertEquals(emptyList<LumiformHomePageUiModel>(), viewModel.pages.value)
         assertEquals(0, viewModel.currentPageIndex.value)
     }
 
@@ -348,7 +348,7 @@ class LumiformHomeViewModelTest {
     }
 
     private fun LumiformHomeViewModel.choiceQuestion() =
-        lumiformTestResult.value!!.first().items.filterIsInstance<LumiformHomeItemUiModel.Choice>().single()
+        pages.value!!.first().items.filterIsInstance<LumiformHomeItemUiModel.Choice>().single()
 
     private companion object {
         const val QUESTION_ID = 10

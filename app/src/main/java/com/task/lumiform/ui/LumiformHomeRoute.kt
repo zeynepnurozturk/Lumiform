@@ -45,7 +45,7 @@ fun LumiformHomeRoute(
     viewModel: LumiformHomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val lumiformTestResult by viewModel.lumiformTestResult.collectAsStateWithLifecycle()
+    val pages by viewModel.pages.collectAsStateWithLifecycle()
     val selectedResponses by viewModel.selectedResponses.collectAsStateWithLifecycle()
     val currentPageIndex by viewModel.currentPageIndex.collectAsStateWithLifecycle()
     val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
@@ -53,7 +53,7 @@ fun LumiformHomeRoute(
     LumiformHomeScreen(
         modifier = modifier,
         uiState = uiState,
-        lumiformTestResult = lumiformTestResult,
+        pages = pages,
         currentPageIndex = currentPageIndex,
         selectedResponses = selectedResponses,
         callbacks = viewModel.callbacks,
@@ -64,14 +64,14 @@ fun LumiformHomeRoute(
 @Composable
 fun LumiformHomeScreen(
     uiState: LumiformHomeUiState,
-    lumiformTestResult: List<LumiformHomePageUiModel>?,
+    pages: List<LumiformHomePageUiModel>?,
     currentPageIndex: Int,
     selectedResponses: Map<Int, List<Int>>,
     callbacks: LumiformHomeCallbacks,
     modifier: Modifier = Modifier,
     syncStatus: SyncStatus = SyncStatus.Synced,
 ) {
-    val pages = lumiformTestResult.orEmpty()
+    val loadedPages = pages.orEmpty()
     val showPage = uiState == LumiformHomeUiState.Success
 
     // System back goes to the previous page; only the first page leaves the screen.
@@ -88,7 +88,7 @@ fun LumiformHomeScreen(
             if (showPage) {
                 PageNavigationComponent(
                     pageIndex = currentPageIndex,
-                    pageCount = pages.size,
+                    pageCount = loadedPages.size,
                     onPreviousClick = callbacks.onPreviousClick,
                     onNextClick = callbacks.onNextClick,
                     onFinishClick = callbacks.onFinishClick,
@@ -110,7 +110,7 @@ fun LumiformHomeScreen(
                     onRetryClick = callbacks.onRetryClick,
                 )
                 LumiformHomeUiState.Success -> {
-                    val currentPage = pages[currentPageIndex]
+                    val currentPage = loadedPages[currentPageIndex]
                     key(currentPage.id) {
                         LumiformPageContent(
                             page = currentPage,

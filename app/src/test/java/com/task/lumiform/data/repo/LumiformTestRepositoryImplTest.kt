@@ -56,7 +56,7 @@ class LumiformTestRepositoryImplTest {
 
         val result = repository.getTestCase()
 
-        val page = (result as UseCaseResult.Success).result.model.single()
+        val page = (result as UseCaseResult.Success).result.pages.single()
         assertEquals("", page.title)
         val section = page.items.single() as SectionDomainModel
         assertEquals("Section", section.title)
@@ -94,9 +94,9 @@ class LumiformTestRepositoryImplTest {
         online.saveAnswer(pageId = 1, questionId = 3, selectedResponseIds = listOf(5))
 
         val refreshed = newRepository(FakeService(NetworkResult.Success(listOf(choicePage()))), dao)
-        val refreshedPage = (refreshed.getTestCase() as UseCaseResult.Success).result.model.single()
+        val refreshedPage = (refreshed.getTestCase() as UseCaseResult.Success).result.pages.single()
         val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), dao)
-        val offlinePage = (offline.getTestCase() as UseCaseResult.Success).result.model.single()
+        val offlinePage = (offline.getTestCase() as UseCaseResult.Success).result.pages.single()
 
         listOf(refreshedPage, offlinePage).forEach { page ->
             val section = page.items.first() as SectionDomainModel
@@ -214,7 +214,7 @@ class LumiformTestRepositoryImplTest {
         val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), dao = dao)
         val result = offline.getTestCase()
 
-        val cached = (result as UseCaseResult.Success).result.model.single()
+        val cached = (result as UseCaseResult.Success).result.pages.single()
         assertEquals("Cached", cached.title)
         assertEquals("Section", (cached.items.single() as SectionDomainModel).title)
     }
@@ -228,7 +228,7 @@ class LumiformTestRepositoryImplTest {
 
         val offline = newRepository(FakeService(NetworkResult.NetworkError(Exception("offline"))), dao = dao)
 
-        val pages = (offline.getTestCase() as UseCaseResult.Success).result.model
+        val pages = (offline.getTestCase() as UseCaseResult.Success).result.pages
         assertEquals(listOf(3), pages.map { it.id })
     }
 

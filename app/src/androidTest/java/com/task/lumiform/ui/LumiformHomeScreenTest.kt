@@ -152,7 +152,7 @@ class LumiformHomeScreenTest {
             LumiformTheme(dynamicColor = false) {
                 LumiformHomeScreen(
                     uiState = uiState,
-                    lumiformTestResult = pages,
+                    pages = pages,
                     currentPageIndex = pageIndex,
                     selectedResponses = selectedResponses,
                     callbacks = callbacks,

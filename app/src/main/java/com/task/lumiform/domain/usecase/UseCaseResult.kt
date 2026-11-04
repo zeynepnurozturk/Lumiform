@@ -13,12 +13,6 @@ sealed class UseCaseResult<out T> {
 
     fun isSuccessful() = this is Success<*>
     fun isFailure() = !isSuccessful()
-
-    fun getErrorOrWarningMessage(): String? = when (this) {
-        is Warning -> message
-        is Error -> error.message
-        else -> null
-    }
 }
 
 sealed class UseCaseError(open val message: String) {
