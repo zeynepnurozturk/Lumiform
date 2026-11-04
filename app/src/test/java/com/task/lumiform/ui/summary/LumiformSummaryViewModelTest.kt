@@ -158,5 +158,7 @@ class LumiformSummaryViewModelTest {
             queuedPageIds += pageId
         }
         override suspend fun syncPageAnswers(pageId: Int) = UseCaseResult.Success(Unit)
+
+        override suspend fun submitAll() = UseCaseResult.Success(Unit)
     }
 }

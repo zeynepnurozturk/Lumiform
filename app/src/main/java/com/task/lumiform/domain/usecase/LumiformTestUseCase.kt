@@ -18,5 +18,7 @@ open class LumiformTestUseCase @Inject constructor(
 
     open fun queuePageForSync(pageId: Int) = repository.queuePageForSync(pageId)
 
+    open suspend fun submitAll(): UseCaseResult<Unit> = repository.submitAll()
+
     data class Result(val model: List<PageDomainModel>)
 }

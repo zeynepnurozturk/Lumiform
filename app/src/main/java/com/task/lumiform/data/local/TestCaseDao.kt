@@ -77,6 +77,13 @@ abstract class TestCaseDao {
         insertResponses(rows.responses.map { it.copy(selected = (it.questionId to it.id) in selected) })
     }
 
+    // Removes the whole cached test case with its answers, so the next load starts fresh from the server.
+    @Transaction
+    open suspend fun clearAll() {
+        deleteResponses()
+        deleteItems()
+    }
+
     @Transaction
     open suspend fun saveSelection(pageId: Int, questionId: Int, responseIds: List<Int>, updatedAt: Long) {
         if (getPage(pageId) == null) return

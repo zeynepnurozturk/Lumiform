@@ -19,4 +19,10 @@ interface LumiformTestRepository {
     fun queuePageForSync(pageId: Int)
 
     suspend fun syncPageAnswers(pageId: Int): UseCaseResult<Unit>
+
+    /**
+     * Sends every unsynced page now and, once all of them are sent, deletes the cached test case and its answers.
+     * On the first failure it stops and keeps everything, so the user can try again.
+     */
+    suspend fun submitAll(): UseCaseResult<Unit>
 }

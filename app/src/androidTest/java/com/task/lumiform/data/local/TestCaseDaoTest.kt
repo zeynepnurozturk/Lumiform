@@ -140,6 +140,18 @@ class TestCaseDaoTest {
         assertTrue(dao.getPage(1)!!.isSynced)
     }
 
+    @Test
+    fun clearAllRemovesEveryItemAndResponse() = runBlocking {
+        dao.replaceAll(listOf(choicePage()).toRows())
+        dao.saveSelection(pageId = 1, questionId = 3, responseIds = listOf(5), updatedAt = 1)
+
+        dao.clearAll()
+
+        val rows = dao.getTestCase()
+        assertTrue(rows.items.isEmpty())
+        assertTrue(rows.responses.isEmpty())
+    }
+
     // Page 1: choice question 3 inside section 2, and choice question 4 directly on the page.
     private fun choicePage(question4Responses: IntArray = intArrayOf(6, 7)) = PageDto(
         id = 1,

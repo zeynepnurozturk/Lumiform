@@ -83,4 +83,15 @@ class LumiformTestRepositoryImpl @Inject internal constructor(
         }
         return result.toUseCaseResult(emptyObject = Unit) { }
     }
+
+    // Workers still queued for these pages find nothing to send once the cache is cleared and finish right away.
+    override suspend fun submitAll(): UseCaseResult<Unit> = withContext(Dispatchers.IO) {
+        for (page in testCaseDao.getPages()) {
+            val result = syncPageAnswers(page.id)
+            if (result.isFailure()) return@withContext result
+        }
+        testCaseDao.clearAll()
+        println("[PageDb] submitted, cache cleared")
+        UseCaseResult.Success(Unit)
+    }
 }

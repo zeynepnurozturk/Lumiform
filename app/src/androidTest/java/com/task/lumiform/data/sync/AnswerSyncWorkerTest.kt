@@ -99,5 +99,6 @@ class AnswerSyncWorkerTest {
             syncedPageIds += pageId
             return syncResult
         }
+        override suspend fun submitAll() = UseCaseResult.Success(Unit)
     }
 }

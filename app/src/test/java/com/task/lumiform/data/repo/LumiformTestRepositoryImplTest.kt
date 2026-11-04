@@ -157,6 +157,54 @@ class LumiformTestRepositoryImplTest {
     }
 
     @Test
+    fun `submit sends every unsynced page and then clears the cache`() = runTest {
+        val dao = FakeTestCaseDao()
+        val service = FakeService(NetworkResult.Success(listOf(choicePage(), PageDto(id = 9))))
+        val repository = newRepository(service, dao)
+        repository.getTestCase()
+        repository.saveAnswer(pageId = 1, questionId = 3, selectedResponseIds = listOf(5))
+
+        val result = repository.submitAll()
+
+        assertTrue(result.isSuccessful())
+        assertEquals(listOf(1), service.submissions.map { it.id })
+        assertTrue(dao.items.isEmpty())
+        assertTrue(dao.responses.isEmpty())
+    }
+
+    @Test
+    fun `failed submit keeps the cache and the answers`() = runTest {
+        val dao = FakeTestCaseDao()
+        val service = FakeService(
+            NetworkResult.Success(listOf(choicePage())),
+            submitResult = NetworkResult.NetworkError(Exception("offline")),
+        )
+        val repository = newRepository(service, dao)
+        repository.getTestCase()
+        repository.saveAnswer(pageId = 1, questionId = 3, selectedResponseIds = listOf(5))
+
+        val result = repository.submitAll()
+
+        assertTrue(result.isFailure())
+        assertEquals(mapOf(3 to listOf(5)), repository.getAnswers())
+        assertFalse(dao.items.getValue(1).isSynced)
+    }
+
+    @Test
+    fun `after submit the next load starts fresh without the old answers`() = runTest {
+        val dao = FakeTestCaseDao()
+        val repository = newRepository(FakeService(NetworkResult.Success(listOf(choicePage()))), dao)
+        repository.getTestCase()
+        repository.saveAnswer(pageId = 1, questionId = 3, selectedResponseIds = listOf(5))
+        repository.submitAll()
+
+        repository.getTestCase()
+
+        assertEquals(emptyMap<Int, List<Int>>(), repository.getAnswers())
+        assertTrue(dao.items.getValue(1).isSynced)
+    }
+
+    @Test
     fun `successful response is cached and served when the next request fails`() = runTest {
         val dao = FakeTestCaseDao()
         val page = PageDto(id = 1, title = "Cached", items = listOf(SectionDto(id = 2, title = "Section")))
