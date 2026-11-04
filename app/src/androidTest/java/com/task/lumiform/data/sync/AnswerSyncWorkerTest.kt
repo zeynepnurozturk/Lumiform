@@ -57,21 +57,51 @@ class AnswerSyncWorkerTest {
     }
 
     @Test
+    fun queuedPagesWaitForANetworkConnection() {
+        val repository = FakeRepository(syncResult = UseCaseResult.Success(Unit))
+        val workManager = initTestWorkManager(repository)
+
+        AnswerSyncWorker.enqueue(workManager, 1)
+
+        assertEquals(emptyList<Int>(), repository.syncedPageIds)
+        assertEquals(listOf(WorkInfo.State.ENQUEUED), uniqueWorkInfos(workManager).map { it.state })
+
+        connectNetwork(workManager)
+
+        assertEquals(listOf(1), repository.syncedPageIds)
+        assertEquals(listOf(WorkInfo.State.SUCCEEDED), uniqueWorkInfos(workManager).map { it.state })
+    }
+
+    @Test
     fun queuedPagesAreSentInOrder() {
         val repository = FakeRepository(syncResult = UseCaseResult.Success(Unit))
+        val workManager = initTestWorkManager(repository)
+
+        AnswerSyncWorker.enqueue(workManager, 1)
+        AnswerSyncWorker.enqueue(workManager, 2)
+        connectNetwork(workManager)
+
+        assertEquals(listOf(1, 2), repository.syncedPageIds)
+        val states = uniqueWorkInfos(workManager).map { it.state }
+        assertEquals(listOf(WorkInfo.State.SUCCEEDED, WorkInfo.State.SUCCEEDED), states)
+    }
+
+    private fun initTestWorkManager(repository: FakeRepository): WorkManager {
         val config = Configuration.Builder()
             .setExecutor(SynchronousExecutor())
             .setWorkerFactory(FakeWorkerFactory(repository))
             .build()
         WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
-        val workManager = WorkManager.getInstance(context)
+        return WorkManager.getInstance(context)
+    }
 
-        AnswerSyncWorker.enqueue(workManager, 1)
-        AnswerSyncWorker.enqueue(workManager, 2)
+    private fun uniqueWorkInfos(workManager: WorkManager) =
+        workManager.getWorkInfosForUniqueWork(AnswerSyncWorker.WORK_NAME).get()
 
-        assertEquals(listOf(1, 2), repository.syncedPageIds)
-        val states = workManager.getWorkInfosForUniqueWork(AnswerSyncWorker.WORK_NAME).get().map { it.state }
-        assertEquals(listOf(WorkInfo.State.SUCCEEDED, WorkInfo.State.SUCCEEDED), states)
+    // Simulates the device coming online: the network constraint of every queued page is met.
+    private fun connectNetwork(workManager: WorkManager) {
+        val testDriver = requireNotNull(WorkManagerTestInitHelper.getTestDriver(context))
+        uniqueWorkInfos(workManager).forEach { testDriver.setAllConstraintsMet(it.id) }
     }
 
     private fun buildWorker(repository: FakeRepository, input: androidx.work.Data) =

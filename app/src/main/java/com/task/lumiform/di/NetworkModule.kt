@@ -29,7 +29,7 @@ abstract class NetworkModule {
     ): LumiformTestService
 
     // To use the bundled mock JSON instead of the gist, comment out the binding above
-    // and uncomment this one (and its MockLumiformTestService import).
+    // and uncomment this one, then import com.task.lumiform.data.remote.service.MockLumiformTestService.
     // @Binds
     // abstract fun bindsLumiformTestService(
     //     lumiformTestService: MockLumiformTestService

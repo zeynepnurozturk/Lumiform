@@ -18,9 +18,6 @@ class LumiformTestServiceImpl @Inject constructor(
     @Suppress("TooGenericExceptionCaught")
     override suspend fun getTestCase(): NetworkResult<List<PageDto>> {
         return try {
-            /* delay(MOCK_NETWORK_DELAY_MS)
-            val response = mockNetworkResponseProvider.getApiResponse<List<PageDto>>(ResponseType.LUMIFORM_TEST_CASE)
-            NetworkResult.Success(data = response, code = 200)*/
             NetworkResult.Success(data = withRetry { api.getTestCase() }, code = 200)
         } catch (e: CancellationException) {
             throw e
@@ -59,7 +56,6 @@ class LumiformTestServiceImpl @Inject constructor(
 
     private companion object {
         const val SUBMIT_ANSWERS_PATH = "/answers"
-        const val MOCK_NETWORK_DELAY_MS = 2_000L
         const val MAX_ATTEMPTS = 3
         const val RETRY_DELAY_MS = 1_000L
         const val HTTP_SERVER_ERROR = 500

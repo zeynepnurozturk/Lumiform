@@ -64,9 +64,10 @@ class LumiformSummaryViewModel @Inject constructor(
         }
     }
 
-    // Answers are already in Room, so submitting only queues every page; pages already synced are skipped by the worker.
-    // TODO: Once the submission is confirmed as successful, clear the back stack so the user can't return to the same QA,
-    //  and delete the cached pages and answers from Room.
+    // Answers are already in Room, so submitting only queues every page. This works offline: WorkManager sends each
+    // page once there is a connection, and pages already synced are skipped by the worker.
+    // TODO: Once the backend confirms the answers were received, delete the cached pages and answers from Room and
+    //  clear the back stack so the user can't return to the same test case.
     private fun onSubmitClick() {
         if (_uiState.value != LumiformSummaryUiState.Success || _isSubmitted.value) return
         pageIds.forEach(lumiformTestUseCase::queuePageForSync)

@@ -10,8 +10,8 @@ import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 /**
- * Reads the bundled JSON from `assets/mock/` instead of calling the gist.
- * To use it, switch the binding in [com.task.lumiform.di.ServiceModule].
+ * Reads the bundled JSON from `assets/mock/` instead of calling the gist. It was used while the API response
+ * wasn't final. To use it, switch the binding in [com.task.lumiform.di.NetworkModule].
  */
 class MockLumiformTestService @Inject constructor(
     private val mockNetworkResponseProvider: MockNetworkResponseProvider,

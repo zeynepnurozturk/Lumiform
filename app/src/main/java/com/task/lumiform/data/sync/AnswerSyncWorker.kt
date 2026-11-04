@@ -3,8 +3,10 @@ package com.task.lumiform.data.sync
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.BackoffPolicy
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -15,7 +17,8 @@ import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
 
 /**
- * Sends one page's unsynced answers. It retries with backoff if the send fails.
+ * Sends one page's unsynced answers. It only runs while there is a network connection, so answers queued
+ * offline wait until the device is back online. It retries with backoff if the send fails.
  */
 @HiltWorker
 class AnswerSyncWorker @AssistedInject constructor(
@@ -46,10 +49,12 @@ class AnswerSyncWorker @AssistedInject constructor(
 
         /**
          * Pages are sent one after another in the order they were queued, under a single unique work name.
+         * Queuing works offline; each page is sent once a connection is available.
          */
         fun enqueue(workManager: WorkManager, pageId: Int) {
             val request = OneTimeWorkRequestBuilder<AnswerSyncWorker>()
                 .setInputData(workDataOf(KEY_PAGE_ID to pageId))
+                .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
                 .build()
             workManager.enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request)

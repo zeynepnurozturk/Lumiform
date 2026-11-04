@@ -23,6 +23,8 @@ interface LumiformTestRepository {
     /**
      * Sends every unsynced page now and, once all of them are sent, deletes the cached test case and its answers.
      * On the first failure it stops and keeps everything, so the user can try again.
+     * Not used by the UI yet: it needs the network, while Submit has to work offline. It is meant for clearing
+     * Room once a real endpoint confirms the answers were received.
      */
     suspend fun submitAll(): UseCaseResult<Unit>
 }
